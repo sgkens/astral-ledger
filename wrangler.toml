@@ -6,6 +6,10 @@ compatibility_date = "2026-04-09"
 APP_NAME = "Astral Ledger"
 ADMIN_REQUIRE_ACCESS_HEADER = "true"
 ADMIN_API_KEY = "replace-me-dev-key"
+CF_ACCESS_TEAM_DOMAIN = "https://your-team.cloudflareaccess.com"
+CF_ACCESS_AUD = "replace-me-access-aud"
+ADMIN_READ_ROLES = "admin,reviewer"
+ADMIN_WRITE_ROLES = "admin"
 
 [[d1_databases]]
 binding = "DB"

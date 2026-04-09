@@ -15,20 +15,18 @@ This baseline now includes:
 - parse issue and review queue creation for low-confidence parses
 - interactive admin review UI over parse runs, parse issues, review queue, and review action history
 - review action notes captured from the UI
-- admin auth gating for review endpoints
+- full Cloudflare Access JWT validation scaffold using JWKs + AUD
+- role-aware permission checks for admin reads and writes
 - codex deep-links from review items
 - seed fallback behavior for API reads
 
 ## Admin auth status
-Admin endpoints now enforce a baseline admin gate:
-- allow Cloudflare Access-protected requests via `Cf-Access-Jwt-Assertion` header presence
-- allow development or fallback access via configured admin API key headers
+The scaffold has moved beyond header presence checks.
+It now validates Access JWTs using JWKs and audience configuration, then applies role/group based permissions.
 
-This is a practical baseline for the current scaffold. The next hardening step is full JWT validation against Cloudflare Access signing keys.
-
-## Deep-link status
-Review queue items now resolve entity deep-links through joined entity metadata.
-Parse issues also expose a codex link when the issue carries both entity type and raw slug context.
+## Current permission model
+- GET on `/api/admin/*` -> requires admin read permission
+- POST on `/api/admin/*` -> requires admin write permission
 
 ## Next step
-Replace baseline admin auth checks with full Cloudflare Access JWT validation and add role-aware permissions.
+Surface the authenticated admin identity in the UI and add per-action permission messaging.

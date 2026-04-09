@@ -1,4 +1,5 @@
 import type { CodexDetail, CodexListItem } from "@astral-ledger/contracts";
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import {
   fallbackTraitDetails,
   fallbackTraitsList,
@@ -22,7 +23,24 @@ export interface Env {
   APP_NAME: string;
   ADMIN_REQUIRE_ACCESS_HEADER?: string;
   ADMIN_API_KEY?: string;
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  CF_ACCESS_AUD?: string;
+  ADMIN_READ_ROLES?: string;
+  ADMIN_WRITE_ROLES?: string;
 }
+
+type AdminPermission = "read" | "write";
+
+type AccessIdentity = {
+  ok: boolean;
+  reason?: string;
+  email?: string;
+  subject?: string;
+  roles: string[];
+  groups: string[];
+  source: "access_jwt" | "admin_api_key" | "none";
+  payload?: JWTPayload;
+};
 
 function json(data: unknown, init: ResponseInit = {}) {
   const headers = new Headers(init.headers);
@@ -34,14 +52,102 @@ function unauthorized(message = "Unauthorized") {
   return json({ ok: false, error: message }, { status: 401 });
 }
 
-function isAdminAuthorized(request: Request, env: Env): boolean {
-  const requireAccessHeader = (env.ADMIN_REQUIRE_ACCESS_HEADER ?? "true").toLowerCase() === "true";
-  const accessJwt = request.headers.get("cf-access-jwt-assertion");
+function forbidden(message = "Forbidden") {
+  return json({ ok: false, error: message }, { status: 403 });
+}
+
+function parseCsv(value?: string): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function stringArrayFromUnknown(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  if (typeof value === "string" && value.trim()) {
+    return [value.trim()];
+  }
+  return [];
+}
+
+function extractRolesAndGroups(payload: JWTPayload): { roles: string[]; groups: string[] } {
+  const directRoles = stringArrayFromUnknown(payload.roles);
+  const directGroups = stringArrayFromUnknown(payload.groups);
+
+  const customRoleCandidates = [
+    (payload as Record<string, unknown>)["custom:roles"],
+    (payload as Record<string, unknown>)["https://astral-ledger.dev/roles"],
+    (payload as Record<string, unknown>)["https://astral-ledger.dev/groups"]
+  ].flatMap(stringArrayFromUnknown);
+
+  const roles = Array.from(new Set([...directRoles, ...customRoleCandidates])).map((v) => v.toLowerCase());
+  const groups = Array.from(new Set([...directGroups])).map((v) => v.toLowerCase());
+
+  return { roles, groups };
+}
+
+const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+function getJwks(teamDomain: string) {
+  const trimmed = teamDomain.replace(/\/$/, "");
+  const jwksUrl = new URL(`${trimmed}/cdn-cgi/access/certs`);
+  const key = jwksUrl.toString();
+  const existing = jwksCache.get(key);
+  if (existing) return existing;
+  const jwks = createRemoteJWKSet(jwksUrl);
+  jwksCache.set(key, jwks);
+  return jwks;
+}
+
+async function validateAccessJwt(request: Request, env: Env): Promise<AccessIdentity> {
+  const jwt = request.headers.get("cf-access-jwt-assertion");
+  if (!jwt) {
+    return { ok: false, reason: "Missing Cf-Access-Jwt-Assertion header", roles: [], groups: [], source: "none" };
+  }
+
+  const teamDomain = env.CF_ACCESS_TEAM_DOMAIN?.trim();
+  const aud = env.CF_ACCESS_AUD?.trim();
+
+  if (!teamDomain || !aud) {
+    return { ok: false, reason: "Cloudflare Access JWT config is incomplete", roles: [], groups: [], source: "none" };
+  }
+
+  try {
+    const jwks = getJwks(teamDomain);
+    const { payload } = await jwtVerify(jwt, jwks, {
+      audience: aud
+    });
+
+    const { roles, groups } = extractRolesAndGroups(payload);
+
+    return {
+      ok: true,
+      email: typeof payload.email === "string" ? payload.email : undefined,
+      subject: typeof payload.sub === "string" ? payload.sub : undefined,
+      roles,
+      groups,
+      source: "access_jwt",
+      payload
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error instanceof Error ? error.message : "JWT validation failed",
+      roles: [],
+      groups: [],
+      source: "none"
+    };
+  }
+}
+
+async function getAdminIdentity(request: Request, env: Env): Promise<AccessIdentity> {
+  const expectedKey = env.ADMIN_API_KEY?.trim();
   const authHeader = request.headers.get("authorization");
   const xAdminKey = request.headers.get("x-admin-key");
-  const expectedKey = env.ADMIN_API_KEY?.trim();
 
-  const hasAccessHeader = !!accessJwt;
   const bearerOk =
     !!expectedKey &&
     !!authHeader &&
@@ -49,15 +155,49 @@ function isAdminAuthorized(request: Request, env: Env): boolean {
     authHeader.slice("Bearer ".length).trim() === expectedKey;
   const headerKeyOk = !!expectedKey && !!xAdminKey && xAdminKey.trim() === expectedKey;
 
-  if (requireAccessHeader) {
-    return hasAccessHeader || bearerOk || headerKeyOk;
+  if (bearerOk || headerKeyOk) {
+    return {
+      ok: true,
+      email: "local-admin-key",
+      subject: "local-admin-key",
+      roles: ["admin"],
+      groups: ["admin"],
+      source: "admin_api_key"
+    };
   }
 
-  if (expectedKey) {
-    return bearerOk || headerKeyOk || hasAccessHeader;
+  return await validateAccessJwt(request, env);
+}
+
+function hasPermission(identity: AccessIdentity, env: Env, permission: AdminPermission): boolean {
+  if (!identity.ok) return false;
+  if (identity.source === "admin_api_key") return true;
+
+  const required = permission === "read"
+    ? parseCsv(env.ADMIN_READ_ROLES ?? "admin,reviewer")
+    : parseCsv(env.ADMIN_WRITE_ROLES ?? "admin");
+
+  const principals = new Set([
+    ...identity.roles.map((v) => v.toLowerCase()),
+    ...identity.groups.map((v) => v.toLowerCase())
+  ]);
+
+  return required.some((role) => principals.has(role.toLowerCase()));
+}
+
+async function requireAdmin(request: Request, env: Env, permission: AdminPermission): Promise<Response | null> {
+  const requireAccessHeader = (env.ADMIN_REQUIRE_ACCESS_HEADER ?? "true").toLowerCase() === "true";
+  const identity = await getAdminIdentity(request, env);
+
+  if (!identity.ok) {
+    return unauthorized(requireAccessHeader ? (identity.reason ?? "Admin access denied") : "Admin access denied");
   }
 
-  return hasAccessHeader;
+  if (!hasPermission(identity, env, permission)) {
+    return forbidden(`Missing required admin ${permission} permission`);
+  }
+
+  return null;
 }
 
 async function loadList<T extends CodexListItem>(db: D1Database | undefined, fromDb: () => Promise<T[]>, fallback: T[]): Promise<T[]> {
@@ -223,9 +363,12 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "");
     const isAdminRoute = path.startsWith("/api/admin/");
+    const requiredPermission: AdminPermission =
+      request.method === "GET" ? "read" : "write";
 
-    if (isAdminRoute && !isAdminAuthorized(request, env)) {
-      return unauthorized("Admin access denied");
+    if (isAdminRoute) {
+      const failure = await requireAdmin(request, env, requiredPermission);
+      if (failure) return failure;
     }
 
     if (path === "/api/health") {

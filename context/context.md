@@ -415,3 +415,7 @@ Admin review actions now support operator notes, and the review UI now surfaces 
 
 ## Latest Progress Update
 Admin auth and permission enforcement has been added as a baseline gate for `/api/admin/*` endpoints. Review items now also expose codex deep-links so operators can jump directly from parse issues or queue entries into the affected entity page during review.
+
+
+## Latest Progress Update
+Admin auth has been upgraded from a baseline header gate to a full Cloudflare Access JWT validation scaffold using remote JWKs and Access AUD verification. The admin surface now also applies role-aware permission checks for read versus write actions.

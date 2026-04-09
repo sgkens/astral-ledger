@@ -135,10 +135,10 @@
   <section class="panel">
     <div class="section-header">
       <h1>Admin Review</h1>
-      <span class="patch-badge">Protected admin surface</span>
+      <span class="patch-badge">Auth + deep links</span>
     </div>
     <p class="lede">
-      Admin endpoints now require either a Cloudflare Access JWT header or a configured admin key header. Cloudflare recommends validating the `Cf-Access-Jwt-Assertion` header for Access-protected applications. citeturn939079search0turn939079search3
+      Admin endpoints are protected. Reads require an authorized admin identity and writes require a stronger admin write role. Review items can also deep-link directly to the affected codex entity page.
     </p>
     {#if actionState}
       <p class="lede">{actionState}</p>

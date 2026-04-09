@@ -271,3 +271,9 @@ Each slice should prove:
 - baseline admin auth gating added to admin API routes
 - codex deep-links added from review queue items and parse issues to entity pages
 - admin review surface now connects moderation work directly to codex inspection
+
+
+## Latest Progress
+- full Cloudflare Access JWT validation scaffold added to admin API routes
+- role-aware permissions added for admin reads and writes
+- admin review deep-links now connect review work directly to codex entity pages

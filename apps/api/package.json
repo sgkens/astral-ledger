@@ -1,9 +1,12 @@
 {
   "name": "@astral-ledger/api",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "build": "echo API build handled by Wrangler"
+  },
+  "dependencies": {
+    "jose": "^5.9.6"
   }
 }
