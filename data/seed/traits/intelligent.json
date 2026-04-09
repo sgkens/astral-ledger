@@ -1,0 +1,25 @@
+{
+  "name": "Intelligent",
+  "slug": "intelligent",
+  "entityType": "trait",
+  "summary": "This species excels at advanced reasoning and research.",
+  "effects": ["+10% Research from Jobs"],
+  "requirements": [],
+  "restrictions": [],
+  "patchHistory": [
+    {
+      "patchVersion": "4.3",
+      "changeKind": "modified",
+      "changeSummary": "Seeded starter data for Astral Ledger vertical slice development."
+    }
+  ],
+  "source": {
+    "label": "Stellaris Wiki",
+    "url": "https://stellaris.paradoxwikis.com/Traits"
+  },
+  "image": {
+    "thumb": "/images/traits/intelligent/thumb.webp",
+    "original": "/images/traits/intelligent/original.png"
+  },
+  "tags": ["science", "research", "biological"]
+}
