@@ -1,0 +1,16 @@
+{
+  "name": "astral-ledger",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev:web": "echo 'wire SvelteKit dev command here'",
+    "dev:api": "echo 'wire Wrangler dev command here'",
+    "lint": "echo 'add lint pipeline'",
+    "test": "echo 'add tests'"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
