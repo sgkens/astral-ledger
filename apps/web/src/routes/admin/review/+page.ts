@@ -1,46 +1,14 @@
-type ParseRun = {
-  id: number;
-  run_kind: string;
-  status: string;
-  started_at: string;
-  finished_at: string | null;
-  summary: string | null;
-};
-
-type ParseIssue = {
-  id: number;
-  entity_type: string | null;
-  page_url: string | null;
-  severity: string;
-  code: string | null;
-  message: string;
-  raw_context: string | null;
-  created_at: string;
-  codex_href: string | null;
-};
-
-type ReviewQueueItem = {
-  id: number;
-  entity_id: number | null;
-  snapshot_id: number | null;
-  issue_id: number | null;
-  review_kind: string;
-  status: string;
-  created_at: string;
-  resolved_at: string | null;
-  entity_slug: string | null;
-  entity_type: string | null;
-  entity_name: string | null;
-  codex_href: string | null;
-};
-
-type ReviewAction = {
-  id: number;
-  review_queue_id: number | null;
-  parse_issue_id: number | null;
-  action_kind: string;
-  note: string | null;
-  created_at: string;
+type AdminIdentity = {
+  ok: boolean;
+  email: string | null;
+  subject: string | null;
+  source: string;
+  roles: string[];
+  groups: string[];
+  permissions: {
+    read: { allowed: boolean; requiredRoles: string[]; reason: string; };
+    write: { allowed: boolean; requiredRoles: string[]; reason: string; };
+  };
 };
 
 export async function load({ fetch }: { fetch: typeof globalThis.fetch }) {
@@ -50,14 +18,16 @@ export async function load({ fetch }: { fetch: typeof globalThis.fetch }) {
     return await response.json() as T;
   }
 
-  const [runs, issues, queue, actions] = await Promise.all([
-    getJson<{ items: ParseRun[] }>("/api/admin/review/parse-runs"),
-    getJson<{ items: ParseIssue[] }>("/api/admin/review/parse-issues"),
-    getJson<{ items: ReviewQueueItem[] }>("/api/admin/review/review-queue"),
-    getJson<{ items: ReviewAction[] }>("/api/admin/review/actions")
+  const [identity, runs, issues, queue, actions] = await Promise.all([
+    getJson<AdminIdentity>("/api/admin/identity"),
+    getJson<{ items: any[] }>("/api/admin/review/parse-runs"),
+    getJson<{ items: any[] }>("/api/admin/review/parse-issues"),
+    getJson<{ items: any[] }>("/api/admin/review/review-queue"),
+    getJson<{ items: any[] }>("/api/admin/review/actions")
   ]);
 
   return {
+    identity,
     parseRuns: runs.items,
     parseIssues: issues.items,
     reviewQueue: queue.items,

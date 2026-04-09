@@ -1,28 +1,38 @@
+:root {
+  --theme-bg: #07090d;
+  --theme-surface: #151c28;
+  --theme-surface-alt: #1a2230;
+  --theme-line: #263247;
+  --theme-text: #f3f6fb;
+  --theme-muted: #8fa0b7;
+  --theme-primary: #d3a84a;
+  --theme-secondary: #59c3ff;
+  --theme-danger: #ff7a7a;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   background: var(--theme-bg);
   color: var(--theme-text);
-  font-family: var(--font-ui);
+  font-family: Inter, system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 a { color: var(--theme-secondary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.app-shell, .page-grid {
+.page-grid {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: 24px 0 64px;
 }
-
 .panel {
   background: linear-gradient(180deg, var(--theme-surface), var(--theme-surface-alt));
   border: 1px solid var(--theme-line);
-  border-radius: var(--radius-lg);
+  border-radius: 22px;
   padding: 20px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.28);
 }
-
 .section { margin-top: 20px; }
 .section-header {
   display: flex;
@@ -31,20 +41,12 @@ a:hover { text-decoration: underline; }
   gap: 16px;
   margin-bottom: 16px;
 }
-.eyebrow {
-  margin: 0 0 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--theme-primary);
-  font-size: 12px;
-}
-.lede { color: var(--text-1); line-height: 1.6; }
 .entity-card {
   display: grid;
   gap: 16px;
   padding: 16px;
   border: 1px solid var(--theme-line);
-  border-radius: var(--radius-md);
+  border-radius: 16px;
   background: rgba(255,255,255,0.02);
 }
 .entity-card + .entity-card { margin-top: 16px; }
@@ -56,62 +58,16 @@ a:hover { text-decoration: underline; }
   border-radius: 999px;
   border: 1px solid var(--theme-line);
   background: rgba(255,255,255,0.03);
-  color: var(--text-1);
+  color: var(--theme-text);
   font-size: 13px;
 }
-.tag-row, .meta-grid { display: flex; gap: 8px; flex-wrap: wrap; }
-.stack, .detail-grid { display: grid; gap: 16px; }
-.detail-grid { margin-top: 20px; }
-.list { margin: 0; padding-left: 18px; }
-
-.tooltip-card {
-  background: rgba(255,255,255,0.03);
-  color: var(--theme-text);
-  border: 1px solid var(--theme-line);
-  border-radius: 16px;
-  box-shadow: 0 18px 48px rgba(0,0,0,0.35);
-  padding: 16px;
-}
-.tooltip-card__header {
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-.tooltip-card__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  object-fit: cover;
-}
-.tooltip-card__icon--placeholder {
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
-}
-.tooltip-card__summary { color: var(--text-1); line-height: 1.5; }
-.tooltip-card__effects, .tooltip-card__requirements {
-  margin-top: 12px;
-  display: grid;
-  gap: 8px;
-}
-.tooltip-card__footer {
+.meta-grid, .stack {
   display: flex;
+  gap: 8px;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  margin-top: 16px;
 }
-
-@media (min-width: 860px) {
-  .detail-grid {
-    grid-template-columns: 1.15fr 0.85fr;
-  }
-  .entity-card {
-    grid-template-columns: 1fr minmax(280px, 380px);
-    align-items: start;
-  }
-}
-
-
+.stack { display: grid; }
+.lede { color: var(--theme-muted); line-height: 1.6; }
 button {
   min-height: 32px;
   padding: 0 12px;
@@ -121,12 +77,7 @@ button {
   color: var(--theme-text);
   cursor: pointer;
 }
-
-button:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-
+button:hover { background: rgba(255,255,255,0.08); }
 input {
   min-height: 36px;
   width: 100%;
@@ -136,7 +87,10 @@ input {
   background: rgba(255,255,255,0.03);
   color: var(--theme-text);
 }
-
+button:disabled, input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .history-panel {
   display: grid;
   gap: 8px;
@@ -145,14 +99,15 @@ input {
   border-radius: 12px;
   background: rgba(255,255,255,0.02);
 }
-
 .history-item {
   display: grid;
   gap: 6px;
   padding: 8px 0;
   border-top: 1px solid rgba(255,255,255,0.05);
 }
-
-.history-item:first-child {
-  border-top: 0;
+.history-item:first-child { border-top: 0; }
+.permission-note {
+  color: var(--theme-danger);
+  font-size: 14px;
+  line-height: 1.4;
 }
