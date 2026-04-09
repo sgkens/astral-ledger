@@ -1,0 +1,18 @@
+:root {
+  --theme-bg: var(--bg-0);
+  --theme-surface: var(--panel-0);
+  --theme-surface-alt: var(--panel-1);
+  --theme-line: var(--line-0);
+  --theme-text: var(--text-0);
+  --theme-muted: var(--text-2);
+  --theme-primary: var(--accent-gold);
+  --theme-secondary: var(--accent-cyan);
+  --theme-glow: rgba(89, 195, 255, 0.18);
+  --theme-danger: var(--accent-red);
+  --theme-success: var(--accent-green);
+}
+
+[data-theme="trade-science"] {
+  --theme-primary: var(--accent-gold);
+  --theme-secondary: var(--accent-cyan);
+}
