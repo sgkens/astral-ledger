@@ -1,8 +1,5 @@
-# Astral Ledger v14
+# Astral Ledger v15
 
 Incremental package focused on:
-- authenticated admin identity display in UI
-- per-action permission messaging
-- Cloudflare Access JWT validation scaffold
-- role-aware permissions
-- codex deep-links from review items
+- persisting reviewer identity into review actions
+- surfacing action performer metadata in the admin history feed

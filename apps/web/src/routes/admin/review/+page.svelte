@@ -20,6 +20,12 @@
     return reviewActions.filter((item: any) => item.parse_issue_id === id);
   }
 
+  function actorLabel(action: any) {
+    const email = action.actor_email ?? "unknown";
+    const source = action.actor_source ?? "unknown";
+    return `${email} (${source})`;
+  }
+
   async function sendAction(targetType: "queue" | "issue", id: number, actionKind: "approve" | "reject" | "resolve") {
     if (!identity.permissions.write.allowed) {
       actionState = identity.permissions.write.reason;
@@ -49,6 +55,9 @@
         parse_issue_id: targetType === "issue" ? id : null,
         action_kind: actionKind,
         note: note || null,
+        actor_email: result.actor_email ?? identity.email,
+        actor_subject: result.actor_subject ?? identity.subject,
+        actor_source: result.actor_source ?? identity.source,
         created_at: new Date().toISOString()
       },
       ...reviewActions
@@ -67,10 +76,10 @@
   <section class="panel">
     <div class="section-header">
       <h1>Admin Review</h1>
-      <span class="patch-badge">Identity aware</span>
+      <span class="patch-badge">Actor traceability</span>
     </div>
     <p class="lede">
-      This UI shows the authenticated admin identity, derived roles/groups, and explicit permission reasons for why actions are allowed or blocked.
+      Review actions now persist reviewer identity metadata so the history feed can show who performed each moderation decision.
     </p>
     {#if actionState}<p class="lede">{actionState}</p>{/if}
   </section>
@@ -115,7 +124,6 @@
           <div>
             <h3>Issue #{issue.id} · {issue.severity}</h3>
             <p>{issue.message}</p>
-            <p class="lede">{issue.entity_type ?? "unknown"} · {issue.page_url ?? "no page url"}</p>
             {#if issue.codex_href}<p><a href={issue.codex_href}>Open entity in codex</a></p>{/if}
           </div>
           <div class="stack">
@@ -135,6 +143,7 @@
                   <div class="history-item">
                     <span class="tag">{action.action_kind}</span>
                     <span>{action.created_at}</span>
+                    <p class="lede">By: {actorLabel(action)}</p>
                     {#if action.note}<p>{action.note}</p>{/if}
                   </div>
                 {/each}
@@ -157,7 +166,6 @@
         <article class="entity-card">
           <div>
             <h3>Queue #{item.id} · {item.review_kind}</h3>
-            <p>Status: {item.status}</p>
             {#if item.codex_href}<p><a href={item.codex_href}>Open {item.entity_name ?? "entity"} in codex</a></p>{/if}
           </div>
           <div class="stack">
@@ -178,11 +186,35 @@
                   <div class="history-item">
                     <span class="tag">{action.action_kind}</span>
                     <span>{action.created_at}</span>
+                    <p class="lede">By: {actorLabel(action)}</p>
                     {#if action.note}<p>{action.note}</p>{/if}
                   </div>
                 {/each}
               </div>
             {/if}
+          </div>
+        </article>
+      {/each}
+    </div>
+  </section>
+
+  <section class="panel section">
+    <div class="section-header">
+      <h2>Global Review History</h2>
+      <span class="patch-badge">{reviewActions.length} items</span>
+    </div>
+
+    <div class="stack">
+      {#each reviewActions as action}
+        <article class="entity-card">
+          <div>
+            <h3>Action #{action.id} · {action.action_kind}</h3>
+            <p class="lede">Queue: {action.review_queue_id ?? "none"} · Issue: {action.parse_issue_id ?? "none"}</p>
+            <p class="lede">By: {actorLabel(action)}</p>
+            {#if action.note}<p>{action.note}</p>{/if}
+          </div>
+          <div class="meta-grid">
+            <span class="tag">{action.created_at}</span>
           </div>
         </article>
       {/each}

@@ -2,11 +2,9 @@
 
 ## Current state
 This incremental package adds:
-- authenticated admin identity display in the UI
-- per-action permission messaging
-- retained Cloudflare Access JWT validation scaffold
-- retained role-aware permissions for admin reads and writes
-- codex deep-links from review items
+- persistence fields for reviewer identity in `review_actions`
+- API support for recording actor email / subject / source on each action
+- admin review UI history entries that show who performed each action
 
 ## Next step
-Persist reviewer identity alongside review actions and surface performer metadata in the history feed.
+Backfill existing review actions with actor metadata where possible and surface avatar/name presentation if your identity provider supplies it.

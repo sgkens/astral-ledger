@@ -115,7 +115,7 @@ async function getAdminIdentity(request: Request, env: Env): Promise<AccessIdent
   const authHeader = request.headers.get("authorization");
   const xAdminKey = request.headers.get("x-admin-key");
   const bearerOk = !!expectedKey && !!authHeader && authHeader.startsWith("Bearer ") && authHeader.slice(7).trim() === expectedKey;
-  const headerKeyOk = !!expectedKey && !!xAdminKey && xAdminKey.trim() == expectedKey;
+  const headerKeyOk = !!expectedKey && !!xAdminKey && xAdminKey.trim() === expectedKey;
 
   if (bearerOk || headerKeyOk) {
     return {
@@ -152,12 +152,8 @@ function permissionReason(identity: AccessIdentity, env: Env, permission: AdminP
   if (identity.source === "admin_api_key") return "Allowed via ADMIN_API_KEY development fallback";
   const required = requiredRoles(env, permission);
   const principals = principalsFromIdentity(identity);
-  if (hasPermission(identity, env, permission)) {
-    return `Allowed because matched required ${permission} role/group: ${required.join(", ")}`;
-  }
-  if (!principals.length) {
-    return `Blocked because no roles/groups were present. Required ${permission} roles: ${required.join(", ")}`;
-  }
+  if (hasPermission(identity, env, permission)) return `Allowed because matched required ${permission} role/group: ${required.join(", ")}`;
+  if (!principals.length) return `Blocked because no roles/groups were present. Required ${permission} roles: ${required.join(", ")}`;
   return `Blocked because current roles/groups [${principals.join(", ")}] did not match required ${permission} roles [${required.join(", ")}]`;
 }
 
@@ -177,18 +173,91 @@ function adminIdentityPayload(identity: AccessIdentity, env: Env) {
     roles: identity.roles,
     groups: identity.groups,
     permissions: {
-      read: {
-        allowed: hasPermission(identity, env, "read"),
-        requiredRoles: requiredRoles(env, "read"),
-        reason: permissionReason(identity, env, "read")
-      },
-      write: {
-        allowed: hasPermission(identity, env, "write"),
-        requiredRoles: requiredRoles(env, "write"),
-        reason: permissionReason(identity, env, "write")
-      }
+      read: { allowed: hasPermission(identity, env, "read"), requiredRoles: requiredRoles(env, "read"), reason: permissionReason(identity, env, "read") },
+      write: { allowed: hasPermission(identity, env, "write"), requiredRoles: requiredRoles(env, "write"), reason: permissionReason(identity, env, "write") }
     }
   };
+}
+
+async function adminReviewActions(db?: D1Database) {
+  if (!db) return [];
+  try {
+    const result = await db.prepare(`
+      SELECT
+        id,
+        review_queue_id,
+        parse_issue_id,
+        action_kind,
+        note,
+        actor_email,
+        actor_subject,
+        actor_source,
+        created_at
+      FROM review_actions
+      ORDER BY id DESC
+      LIMIT 200
+    `).all();
+    return result.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
+async function createReviewAction(
+  db: D1Database | undefined,
+  targetType: "queue" | "issue",
+  id: number,
+  actionKind: "approve" | "reject" | "resolve",
+  note: string | undefined,
+  actor: AccessIdentity
+) {
+  if (!db) return { ok: false, error: "Database unavailable" };
+
+  const actorEmail = actor.email ?? null;
+  const actorSubject = actor.subject ?? null;
+  const actorSource = actor.source;
+
+  try {
+    if (targetType === "queue") {
+      const newStatus = actionKind === "approve" ? "approved" : actionKind === "reject" ? "rejected" : "resolved";
+      await db.prepare(`
+        UPDATE review_queue
+        SET status = ?, resolved_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(newStatus, id).run();
+
+      await db.prepare(`
+        INSERT INTO review_actions (
+          review_queue_id, parse_issue_id, action_kind, note, actor_email, actor_subject, actor_source
+        )
+        VALUES (?, NULL, ?, ?, ?, ?, ?)
+      `).bind(id, actionKind, note ?? null, actorEmail, actorSubject, actorSource).run();
+
+      return { ok: true, targetType, id, actionKind, status: newStatus, note: note ?? null, actor_email: actorEmail, actor_subject: actorSubject, actor_source: actorSource };
+    }
+
+    if (targetType === "issue") {
+      const suffix = note ? ` | ${note}` : "";
+      await db.prepare(`
+        UPDATE parse_issues
+        SET message = message || ?
+        WHERE id = ?
+      `).bind(` [${actionKind}${suffix}]`, id).run();
+
+      await db.prepare(`
+        INSERT INTO review_actions (
+          review_queue_id, parse_issue_id, action_kind, note, actor_email, actor_subject, actor_source
+        )
+        VALUES (NULL, ?, ?, ?, ?, ?, ?)
+      `).bind(id, actionKind, note ?? null, actorEmail, actorSubject, actorSource).run();
+
+      return { ok: true, targetType, id, actionKind, note: note ?? null, actor_email: actorEmail, actor_subject: actorSubject, actor_source: actorSource };
+    }
+
+    return { ok: false, error: "Unsupported target type" };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unknown database error" };
+  }
 }
 
 export default {
@@ -213,53 +282,26 @@ export default {
       return json(adminIdentityPayload(identity, env));
     }
 
-    // Simplified review endpoints with codex deep-links retained
-    if (path === "/api/admin/review/parse-runs") {
-      return json({ items: [] });
+    if (path === "/api/admin/review/actions") {
+      return json({ items: await adminReviewActions(env.DB) });
     }
+
+    if (request.method === "POST" && path === "/api/admin/review/action") {
+      const identity = await getAdminIdentity(request, env);
+      if (!identity.ok) return unauthorized(identity.reason ?? "Admin access denied");
+
+      const body = await request.json() as { targetType: "queue" | "issue"; id: number; actionKind: "approve" | "reject" | "resolve"; note?: string; };
+      const result = await createReviewAction(env.DB, body.targetType, body.id, body.actionKind, body.note, identity);
+      return json(result, { status: result.ok ? 200 : 400 });
+    }
+
+    // Seeded admin views for this incremental package
+    if (path === "/api/admin/review/parse-runs") return json({ items: [] });
     if (path === "/api/admin/review/parse-issues") {
-      return json({
-        items: [
-          {
-            id: 1,
-            entity_type: "trait",
-            page_url: "https://stellaris.paradoxwikis.com/Traits",
-            severity: "warning",
-            code: "low_confidence_parse",
-            message: "Example parse issue",
-            raw_context: "intelligent",
-            created_at: new Date().toISOString(),
-            codex_href: "/codex/traits/intelligent"
-          }
-        ]
-      });
+      return json({ items: [{ id: 1, entity_type: "trait", page_url: "https://stellaris.paradoxwikis.com/Traits", severity: "warning", code: "low_confidence_parse", message: "Example parse issue", raw_context: "intelligent", created_at: new Date().toISOString(), codex_href: "/codex/traits/intelligent" }] });
     }
     if (path === "/api/admin/review/review-queue") {
-      return json({
-        items: [
-          {
-            id: 1,
-            entity_id: 1,
-            snapshot_id: 1,
-            issue_id: 1,
-            review_kind: "parse_diff",
-            status: "open",
-            created_at: new Date().toISOString(),
-            resolved_at: null,
-            entity_slug: "intelligent",
-            entity_type: "trait",
-            entity_name: "Intelligent",
-            codex_href: "/codex/traits/intelligent"
-          }
-        ]
-      });
-    }
-    if (path === "/api/admin/review/actions") {
-      return json({ items: [] });
-    }
-    if (request.method === "POST" && path === "/api/admin/review/action") {
-      const body = await request.json() as { targetType: "queue" | "issue"; id: number; actionKind: "approve" | "reject" | "resolve"; note?: string; };
-      return json({ ok: true, ...body, created_at: new Date().toISOString() });
+      return json({ items: [{ id: 1, entity_id: 1, snapshot_id: 1, issue_id: 1, review_kind: "parse_diff", status: "open", created_at: new Date().toISOString(), resolved_at: null, entity_slug: "intelligent", entity_type: "trait", entity_name: "Intelligent", codex_href: "/codex/traits/intelligent" }] });
     }
 
     return json({ error: "Not found" }, { status: 404 });
