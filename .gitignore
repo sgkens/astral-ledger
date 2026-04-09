@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.svelte-kit/
+.wrangler/
+.cache/
+.env
+.env.*
+*.db
+*.sqlite
+*.zip
