@@ -110,3 +110,18 @@ a:hover { text-decoration: underline; }
     align-items: start;
   }
 }
+
+
+button {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--theme-line);
+  background: rgba(255,255,255,0.04);
+  color: var(--theme-text);
+  cursor: pointer;
+}
+
+button:hover {
+  background: rgba(255,255,255,0.08);
+}

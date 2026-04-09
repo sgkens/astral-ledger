@@ -93,6 +93,56 @@ async function adminReviewQueue(db?: D1Database) {
   }
 }
 
+async function createReviewAction(
+  db: D1Database | undefined,
+  targetType: "queue" | "issue",
+  id: number,
+  actionKind: "approve" | "reject" | "resolve",
+  note?: string
+) {
+  if (!db) {
+    return { ok: false, error: "Database unavailable" };
+  }
+
+  try {
+    if (targetType === "queue") {
+      const newStatus = actionKind === "approve" ? "approved" : actionKind === "reject" ? "rejected" : "resolved";
+      await db.prepare(`
+        UPDATE review_queue
+        SET status = ?, resolved_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(newStatus, id).run();
+
+      await db.prepare(`
+        INSERT INTO review_actions (review_queue_id, parse_issue_id, action_kind, note)
+        VALUES (?, NULL, ?, ?)
+      `).bind(id, actionKind, note ?? null).run();
+
+      return { ok: true, targetType, id, actionKind, status: newStatus };
+    }
+
+    if (targetType === "issue") {
+      const suffix = note ? ` | ${note}` : "";
+      await db.prepare(`
+        UPDATE parse_issues
+        SET message = message || ?
+        WHERE id = ?
+      `).bind(` [${actionKind}${suffix}]`, id).run();
+
+      await db.prepare(`
+        INSERT INTO review_actions (review_queue_id, parse_issue_id, action_kind, note)
+        VALUES (NULL, ?, ?, ?)
+      `).bind(id, actionKind, note ?? null).run();
+
+      return { ok: true, targetType, id, actionKind };
+    }
+
+    return { ok: false, error: "Unsupported target type" };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Unknown database error" };
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -100,6 +150,18 @@ export default {
 
     if (path === "/api/health") {
       return json({ ok: true, service: env.APP_NAME || "Astral Ledger" });
+    }
+
+    if (request.method === "POST" && path === "/api/admin/review/action") {
+      const body = await request.json() as {
+        targetType: "queue" | "issue";
+        id: number;
+        actionKind: "approve" | "reject" | "resolve";
+        note?: string;
+      };
+
+      const result = await createReviewAction(env.DB, body.targetType, body.id, body.actionKind, body.note);
+      return json(result, { status: result.ok ? 200 : 400 });
     }
 
     if (path === "/api/codex/traits") {

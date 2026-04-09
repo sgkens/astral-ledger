@@ -403,3 +403,7 @@ Ethics now has the same D1 write integration path as traits. Ingest executions n
 
 ## Latest Progress Update
 Authority ingest parsing now uses the same pipeline as traits and ethics. A starter admin review UI has also been added on top of `parse_runs`, `parse_issues`, and `review_queue`, giving the project its first operational inspection surface for ingest activity.
+
+
+## Latest Progress Update
+The admin review surface now supports approve, reject, and resolve actions. These actions are persisted through a new `review_actions` table, and the Worker API now exposes mutation endpoints to update `review_queue` and annotate `parse_issues` during review.

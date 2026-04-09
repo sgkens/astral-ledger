@@ -253,3 +253,9 @@ Each slice should prove:
 - authority ingest parsing added to the shared PowerShell ingest pipeline
 - starter admin review UI added on top of parse runs, parse issues, and review queue
 - admin review read endpoints added to the Worker API
+
+
+## Latest Progress
+- approve / reject / resolve actions added for review queue items and parse issues
+- `review_actions` table added for persisted moderation history
+- admin review UI is now interactive rather than read-only

@@ -29,6 +29,59 @@
       resolved_at: string | null;
     }>;
   };
+
+  let parseRuns = data.parseRuns;
+  let parseIssues = data.parseIssues;
+  let reviewQueue = data.reviewQueue;
+  let actionState = "";
+
+  async function sendAction(targetType: "queue" | "issue", id: number, actionKind: "approve" | "reject" | "resolve") {
+    actionState = `Running ${actionKind} on ${targetType} ${id}...`;
+
+    const response = await fetch("/api/admin/review/action", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        targetType,
+        id,
+        actionKind
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      actionState = result.error || "Action failed.";
+      return;
+    }
+
+    if (targetType === "queue") {
+      reviewQueue = reviewQueue.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: result.status ?? item.status,
+              resolved_at: new Date().toISOString()
+            }
+          : item
+      );
+    }
+
+    if (targetType === "issue") {
+      parseIssues = parseIssues.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              message: `${item.message} [${actionKind}]`
+            }
+          : item
+      );
+    }
+
+    actionState = `${actionKind} completed for ${targetType} ${id}.`;
+  }
 </script>
 
 <svelte:head>
@@ -39,21 +92,24 @@
   <section class="panel">
     <div class="section-header">
       <h1>Admin Review</h1>
-      <span class="patch-badge">Starter UI</span>
+      <span class="patch-badge">Actions enabled</span>
     </div>
     <p class="lede">
       This screen surfaces parse runs, parse issues, and review queue records created by the ingest pipeline.
     </p>
+    {#if actionState}
+      <p class="lede">{actionState}</p>
+    {/if}
   </section>
 
   <section class="panel section">
     <div class="section-header">
       <h2>Parse Runs</h2>
-      <span class="patch-badge">{data.parseRuns.length} items</span>
+      <span class="patch-badge">{parseRuns.length} items</span>
     </div>
 
     <div class="stack">
-      {#each data.parseRuns as run}
+      {#each parseRuns as run}
         <article class="entity-card">
           <div>
             <h3>Run #{run.id} · {run.run_kind}</h3>
@@ -71,11 +127,11 @@
   <section class="panel section">
     <div class="section-header">
       <h2>Parse Issues</h2>
-      <span class="patch-badge">{data.parseIssues.length} items</span>
+      <span class="patch-badge">{parseIssues.length} items</span>
     </div>
 
     <div class="stack">
-      {#each data.parseIssues as issue}
+      {#each parseIssues as issue}
         <article class="entity-card">
           <div>
             <h3>Issue #{issue.id} · {issue.severity}</h3>
@@ -85,6 +141,8 @@
           <div class="meta-grid">
             {#if issue.code}<span class="tag">{issue.code}</span>{/if}
             <span class="tag">{issue.created_at}</span>
+            <button on:click={() => sendAction("issue", issue.id, "resolve")}>Resolve</button>
+            <button on:click={() => sendAction("issue", issue.id, "reject")}>Reject</button>
           </div>
         </article>
       {/each}
@@ -94,11 +152,11 @@
   <section class="panel section">
     <div class="section-header">
       <h2>Review Queue</h2>
-      <span class="patch-badge">{data.reviewQueue.length} items</span>
+      <span class="patch-badge">{reviewQueue.length} items</span>
     </div>
 
     <div class="stack">
-      {#each data.reviewQueue as item}
+      {#each reviewQueue as item}
         <article class="entity-card">
           <div>
             <h3>Queue #{item.id} · {item.review_kind}</h3>
@@ -108,6 +166,9 @@
           <div class="meta-grid">
             <span class="tag">{item.created_at}</span>
             {#if item.resolved_at}<span class="tag">{item.resolved_at}</span>{/if}
+            <button on:click={() => sendAction("queue", item.id, "approve")}>Approve</button>
+            <button on:click={() => sendAction("queue", item.id, "reject")}>Reject</button>
+            <button on:click={() => sendAction("queue", item.id, "resolve")}>Resolve</button>
           </div>
         </article>
       {/each}
