@@ -2,6 +2,9 @@ name = "astral-ledger-api"
 main = "apps/api/src/index.ts"
 compatibility_date = "2026-04-09"
 
+[vars]
+APP_NAME = "Astral Ledger"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "astral-ledger"

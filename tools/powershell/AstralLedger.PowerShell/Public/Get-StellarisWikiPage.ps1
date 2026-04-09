@@ -17,7 +17,7 @@ function Get-StellarisWikiPage {
 
     Start-Sleep -Milliseconds $ThrottleMilliseconds
 
-    $response = Invoke-WebRequest -Uri $Url -UseBasicParsing
+    $response = Invoke-WebRequest -Uri $Url
     $html = [string]$response.Content
     $hash = Get-SourceHash -InputString $html
 
@@ -28,6 +28,8 @@ function Get-StellarisWikiPage {
         }
         Set-Content -Path $OutFile -Value $html -Encoding UTF8
     }
+
+    Write-AstralLog -Stage fetch -Message "Fetched $Url hash=$hash"
 
     [pscustomobject]@{
         Url         = $Url

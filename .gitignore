@@ -9,3 +9,4 @@ build/
 *.db
 *.sqlite
 *.zip
+coverage/

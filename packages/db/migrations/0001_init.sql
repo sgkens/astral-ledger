@@ -1,4 +1,3 @@
--- Core source tracking
 CREATE TABLE IF NOT EXISTS sources (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   kind TEXT NOT NULL,

@@ -1,16 +1,20 @@
 {
   "name": "astral-ledger",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "dev:web": "echo 'wire SvelteKit dev command here'",
-    "dev:api": "echo 'wire Wrangler dev command here'",
-    "lint": "echo 'add lint pipeline'",
-    "test": "echo 'add tests'"
+    "dev:web": "pnpm --filter @astral-ledger/web dev",
+    "dev:api": "pnpm --filter @astral-ledger/api dev",
+    "build:web": "pnpm --filter @astral-ledger/web build",
+    "build:api": "pnpm --filter @astral-ledger/api build",
+    "check:web": "pnpm --filter @astral-ledger/web check",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "ingest:traits": "pwsh -File ./tools/powershell/scripts/Invoke-TraitsIngest.ps1"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "devDependencies": {
+    "drizzle-kit": "^0.30.0",
+    "typescript": "^5.6.3"
+  }
 }

@@ -18,10 +18,7 @@ function Get-StellarisEntityIndex {
         throw 'Either -Html or -SourceHtmlPath must be provided.'
     }
 
-    # Starter implementation:
-    # Returns one seeded candidate so the vertical slice can move forward
-    # before the real HTML parser is completed.
-    [pscustomobject]@{
+    $result = [pscustomobject]@{
         EntityType = $EntityType.ToLowerInvariant()
         Name       = 'Intelligent'
         Slug       = 'intelligent'
@@ -29,4 +26,7 @@ function Get-StellarisEntityIndex {
         ImageUrl   = 'https://stellaris.paradoxwikis.com/images/6/65/Trait_intelligent.png'
         PatchHint  = '4.3'
     }
+
+    Write-AstralLog -Stage index -Message "Discovered seeded candidate $($result.Slug)"
+    $result
 }

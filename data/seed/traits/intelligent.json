@@ -10,7 +10,7 @@
     {
       "patchVersion": "4.3",
       "changeKind": "modified",
-      "changeSummary": "Seeded starter data for Astral Ledger vertical slice development."
+      "changeSummary": "Seeded starter data for Astral Ledger baseline development."
     }
   ],
   "source": {

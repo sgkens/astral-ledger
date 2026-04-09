@@ -14,8 +14,7 @@ function ConvertFrom-StellarisWikiHtml {
 
     $entityTypeLower = $EntityType.ToLowerInvariant()
 
-    # Starter normalization result. Replace with entity-specific parsing.
-    [pscustomobject]@{
+    $result = [pscustomobject]@{
         EntityType      = $entityTypeLower
         Slug            = 'intelligent'
         Name            = 'Intelligent'
@@ -47,7 +46,10 @@ function ConvertFrom-StellarisWikiHtml {
         Parse           = [pscustomobject]@{
             Status     = 'parsed'
             Confidence = 0.85
-            Warnings   = @('Starter parser returned seeded output.')
+            Warnings   = @('Baseline parser returned seeded output.')
         }
     }
+
+    Write-AstralLog -Stage parse -Message "Parsed seeded $entityTypeLower/$($result.Slug)"
+    $result
 }

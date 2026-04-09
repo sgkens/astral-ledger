@@ -1,7 +1,7 @@
 @{
     RootModule = 'AstralLedger.PowerShell.psm1'
-    ModuleVersion = '0.1.0'
-    GUID = '5c1ff0bf-fd80-4f59-a0b4-3a4207df1eab'
+    ModuleVersion = '0.2.0'
+    GUID = 'a418d02f-69d1-4495-b7e1-f059a0f32bd2'
     Author = 'OpenAI'
     CompanyName = 'Astral Ledger'
     Copyright = '(c) Astral Ledger'
@@ -10,6 +10,7 @@
     FunctionsToExport = @(
         'Get-StellarisWikiPage',
         'Get-StellarisEntityIndex',
-        'ConvertFrom-StellarisWikiHtml'
+        'ConvertFrom-StellarisWikiHtml',
+        'Write-AstralLog'
     )
 }
