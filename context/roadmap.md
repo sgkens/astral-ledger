@@ -229,3 +229,9 @@ Each slice should prove:
 ## Latest Progress
 - route-level `load` conversion added for codex detail/list pages
 - authorities vertical slice added with D1 seed migration, API routes, and codex pages
+
+
+## Latest Progress
+- heuristic trait parser added for real wiki HTML parsing
+- source snapshot persistence added to the PowerShell ingest pipeline
+- parse/review migration added for future approval workflow integration

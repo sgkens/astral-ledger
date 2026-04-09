@@ -387,3 +387,7 @@ The project now supports live web route loading for traits and ethics, and ethic
 
 ## Latest Progress Update
 Route-level load conversion has been added for codex pages, and authorities has been added as the third canonical entity family in the vertical-slice pipeline.
+
+
+## Latest Progress Update
+A heuristic-based real trait parser has been added in the PowerShell ingest layer, and source snapshot persistence now writes raw HTML plus JSON metadata to a local snapshot store. Parse/review tables have also been added to the D1 migration set for the future ingest workflow.
