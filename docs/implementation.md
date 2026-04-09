@@ -4,9 +4,11 @@
 This baseline now includes:
 - initial D1 schema
 - trait seed migration
-- D1 read helpers
-- Worker trait endpoints
+- ethic seed migration
+- D1 read helpers for traits and ethics
+- Worker trait and ethic endpoints
+- live web route loading for traits and ethics
 - seed fallback behavior
 
 ## Next step
-Wire Svelte pages to the live API and add ethics as the second entity family.
+Add authorities as the next entity family and replace the seeded parser with real trait parsing from the wiki.

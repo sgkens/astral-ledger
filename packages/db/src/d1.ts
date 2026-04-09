@@ -1,4 +1,4 @@
-import type { CodexDetail, CodexListItem, PatchHistoryEntry } from "@astral-ledger/contracts";
+import type { CodexDetail, CodexListItem, PatchHistoryEntry, EntityType } from "@astral-ledger/contracts";
 
 export interface D1Like {
   prepare(query: string): {
@@ -29,31 +29,31 @@ type RequirementRow = {
   requirement_type: string | null;
 };
 
-export async function getTraitsListFromD1(db: D1Like): Promise<CodexListItem[]> {
+export async function getEntityListFromD1(db: D1Like, entityType: EntityType): Promise<CodexListItem[]> {
   const result = await db.prepare(`
     SELECT id, slug, name, summary, source_url, changed_in_patch
     FROM entities
-    WHERE entity_type = 'trait'
+    WHERE entity_type = ?
     ORDER BY name ASC
-  `).all<EntityRow>();
+  `).bind(entityType).all<EntityRow>();
 
   return result.results.map((row) => ({
     slug: row.slug,
     name: row.name,
-    entityType: "trait",
+    entityType,
     summary: row.summary ?? undefined,
     patchChangedIn: row.changed_in_patch ?? undefined,
     tags: []
   }));
 }
 
-export async function getTraitDetailFromD1(db: D1Like, slug: string): Promise<CodexDetail | null> {
+export async function getEntityDetailFromD1(db: D1Like, entityType: EntityType, slug: string): Promise<CodexDetail | null> {
   const entity = await db.prepare(`
     SELECT id, slug, name, summary, source_url, changed_in_patch
     FROM entities
-    WHERE entity_type = 'trait' AND slug = ?
+    WHERE entity_type = ? AND slug = ?
     LIMIT 1
-  `).bind(slug).first<EntityRow>();
+  `).bind(entityType, slug).first<EntityRow>();
 
   if (!entity) return null;
 
@@ -73,11 +73,11 @@ export async function getTraitDetailFromD1(db: D1Like, slug: string): Promise<Co
 
   const requirements = reqs.results
     .filter((r) => !r.requirement_type || r.requirement_type == "requirement")
-    .map((r) => r.requirement_text);
+    .map((r) => r.requirement_text)
 
   const restrictions = reqs.results
     .filter((r) => r.requirement_type == "restriction")
-    .map((r) => r.requirement_text);
+    .map((r) => r.requirement_text)
 
   const patchHistory: PatchHistoryEntry[] = entity.changed_in_patch
     ? [{ patchVersion: entity.changed_in_patch, changeKind: "modified", changeSummary: "Loaded from D1." }]
@@ -86,7 +86,7 @@ export async function getTraitDetailFromD1(db: D1Like, slug: string): Promise<Co
   return {
     name: entity.name,
     slug: entity.slug,
-    entityType: "trait",
+    entityType,
     summary: entity.summary ?? undefined,
     effects: effects.results.map((e) => e.effect_text),
     requirements,
@@ -94,8 +94,24 @@ export async function getTraitDetailFromD1(db: D1Like, slug: string): Promise<Co
     patchHistory,
     source: {
       label: "Stellaris Wiki",
-      url: entity.source_url ?? "https://stellaris.paradoxwikis.com/Traits"
+      url: entity.source_url ?? "https://stellaris.paradoxwikis.com/Stellaris_Wiki"
     },
     tags: []
   };
+}
+
+export async function getTraitsListFromD1(db: D1Like) {
+  return getEntityListFromD1(db, "trait");
+}
+
+export async function getTraitDetailFromD1(db: D1Like, slug: string) {
+  return getEntityDetailFromD1(db, "trait", slug);
+}
+
+export async function getEthicsListFromD1(db: D1Like) {
+  return getEntityListFromD1(db, "ethic");
+}
+
+export async function getEthicDetailFromD1(db: D1Like, slug: string) {
+  return getEntityDetailFromD1(db, "ethic", slug);
 }

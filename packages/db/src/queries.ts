@@ -39,3 +39,67 @@ export const fallbackTraitDetails: Record<string, CodexDetail> = {
     tags: ["science", "research", "biological"]
   }
 };
+
+export const fallbackEthicsList: CodexListItem[] = [
+  {
+    slug: "fanatic-materialist",
+    name: "Fanatic Materialist",
+    entityType: "ethic",
+    summary: "A strongly materialist society that prioritizes scientific progress and rational systems.",
+    patchChangedIn: "4.3",
+    tags: ["science", "technology", "materialist"]
+  },
+  {
+    slug: "xenophile",
+    name: "Xenophile",
+    entityType: "ethic",
+    summary: "A society that embraces cooperation, diplomacy, and openness toward alien civilizations.",
+    patchChangedIn: "4.3",
+    tags: ["diplomacy", "trade", "federation"]
+  }
+];
+
+export const fallbackEthicDetails: Record<string, CodexDetail> = {
+  "fanatic-materialist": {
+    name: "Fanatic Materialist",
+    slug: "fanatic-materialist",
+    entityType: "ethic",
+    summary: "A strongly materialist society that prioritizes scientific progress and rational systems.",
+    effects: ["+10% Research Speed", "-10% Robot Upkeep"],
+    requirements: [],
+    restrictions: [],
+    patchHistory: [
+      {
+        patchVersion: "4.3",
+        changeKind: "modified",
+        changeSummary: "Seeded baseline ethic detail record."
+      }
+    ],
+    source: {
+      label: "Stellaris Wiki",
+      url: "https://stellaris.paradoxwikis.com/Ethics"
+    },
+    tags: ["science", "technology", "materialist"]
+  },
+  xenophile: {
+    name: "Xenophile",
+    slug: "xenophile",
+    entityType: "ethic",
+    summary: "A society that embraces cooperation, diplomacy, and openness toward alien civilizations.",
+    effects: ["+1 Envoy", "+10% Trade Value"],
+    requirements: [],
+    restrictions: [],
+    patchHistory: [
+      {
+        patchVersion: "4.3",
+        changeKind: "modified",
+        changeSummary: "Seeded baseline ethic detail record."
+      }
+    ],
+    source: {
+      label: "Stellaris Wiki",
+      url: "https://stellaris.paradoxwikis.com/Ethics"
+    },
+    tags: ["diplomacy", "trade", "federation"]
+  }
+};

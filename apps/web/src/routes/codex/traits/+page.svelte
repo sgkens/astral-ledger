@@ -1,19 +1,22 @@
 <script lang="ts">
   import TooltipCard from "../../../lib/components/cards/TooltipCard.svelte";
+  import { onMount } from "svelte";
+  import { fetchTraits } from "../../../lib/api/codex";
+  import type { CodexListItem } from "../../../../../packages/contracts/src";
 
-  const items = [
-    {
-      slug: "intelligent",
-      name: "Intelligent",
-      entityType: "trait",
-      summary: "This species excels at advanced reasoning and research.",
-      patchChangedIn: "4.3",
-      effects: ["+10% Research from Jobs"],
-      sourceLabel: "Stellaris Wiki",
-      sourceUrl: "https://stellaris.paradoxwikis.com/Traits",
-      tags: ["science", "research", "biological"]
+  let items: CodexListItem[] = [];
+  let loading = true;
+  let error = "";
+
+  onMount(async () => {
+    try {
+      items = await fetchTraits();
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to load traits.";
+    } finally {
+      loading = false;
     }
-  ];
+  });
 </script>
 
 <svelte:head>
@@ -24,30 +27,36 @@
   <section class="panel">
     <div class="section-header">
       <h1>Traits</h1>
-      <span class="patch-badge">D1-ready</span>
+      <span class="patch-badge">Live API</span>
     </div>
 
-    <div class="stack">
-      {#each items as item}
-        <article class="entity-card">
-          <div>
-            <h2><a href={`/codex/traits/${item.slug}`}>{item.name}</a></h2>
-            <p>{item.summary}</p>
-          </div>
+    {#if loading}
+      <p class="lede">Loading traits...</p>
+    {:else if error}
+      <p class="lede">{error}</p>
+    {:else}
+      <div class="stack">
+        {#each items as item}
+          <article class="entity-card">
+            <div>
+              <h2><a href={`/codex/traits/${item.slug}`}>{item.name}</a></h2>
+              <p>{item.summary}</p>
+            </div>
 
-          <TooltipCard
-            name={item.name}
-            entityType={item.entityType}
-            summary={item.summary}
-            effects={item.effects}
-            patchChangedIn={item.patchChangedIn}
-            sourceLabel={item.sourceLabel}
-            sourceUrl={item.sourceUrl}
-            tags={item.tags}
-            variant="compact"
-          />
-        </article>
-      {/each}
-    </div>
+            <TooltipCard
+              name={item.name}
+              entityType={item.entityType}
+              summary={item.summary}
+              effects={[]}
+              patchChangedIn={item.patchChangedIn}
+              sourceLabel="Stellaris Wiki"
+              sourceUrl="https://stellaris.paradoxwikis.com/Traits"
+              tags={item.tags ?? []}
+              variant="compact"
+            />
+          </article>
+        {/each}
+      </div>
+    {/if}
   </section>
 </div>

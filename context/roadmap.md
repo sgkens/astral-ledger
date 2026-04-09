@@ -219,3 +219,8 @@ Each slice should prove:
 - API read
 - UI rendering
 - reuse in later product areas
+
+
+## Latest Progress
+- live web route loading added for traits and ethics
+- ethics vertical slice added with D1 seed migration, API routes, and codex pages
