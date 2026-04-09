@@ -72,12 +72,12 @@ export async function getEntityDetailFromD1(db: D1Like, entityType: EntityType, 
   `).bind(entity.id).all<RequirementRow>();
 
   const requirements = reqs.results
-    .filter((r) => !r.requirement_type || r.requirement_type == "requirement")
-    .map((r) => r.requirement_text)
+    .filter((r) => !r.requirement_type || r.requirement_type === "requirement")
+    .map((r) => r.requirement_text);
 
   const restrictions = reqs.results
-    .filter((r) => r.requirement_type == "restriction")
-    .map((r) => r.requirement_text)
+    .filter((r) => r.requirement_type === "restriction")
+    .map((r) => r.requirement_text);
 
   const patchHistory: PatchHistoryEntry[] = entity.changed_in_patch
     ? [{ patchVersion: entity.changed_in_patch, changeKind: "modified", changeSummary: "Loaded from D1." }]
@@ -100,18 +100,9 @@ export async function getEntityDetailFromD1(db: D1Like, entityType: EntityType, 
   };
 }
 
-export async function getTraitsListFromD1(db: D1Like) {
-  return getEntityListFromD1(db, "trait");
-}
-
-export async function getTraitDetailFromD1(db: D1Like, slug: string) {
-  return getEntityDetailFromD1(db, "trait", slug);
-}
-
-export async function getEthicsListFromD1(db: D1Like) {
-  return getEntityListFromD1(db, "ethic");
-}
-
-export async function getEthicDetailFromD1(db: D1Like, slug: string) {
-  return getEntityDetailFromD1(db, "ethic", slug);
-}
+export const getTraitsListFromD1 = (db: D1Like) => getEntityListFromD1(db, "trait");
+export const getTraitDetailFromD1 = (db: D1Like, slug: string) => getEntityDetailFromD1(db, "trait", slug);
+export const getEthicsListFromD1 = (db: D1Like) => getEntityListFromD1(db, "ethic");
+export const getEthicDetailFromD1 = (db: D1Like, slug: string) => getEntityDetailFromD1(db, "ethic", slug);
+export const getAuthoritiesListFromD1 = (db: D1Like) => getEntityListFromD1(db, "authority");
+export const getAuthorityDetailFromD1 = (db: D1Like, slug: string) => getEntityDetailFromD1(db, "authority", slug);

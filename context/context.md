@@ -383,3 +383,7 @@ That order gives the project:
 
 ## Latest Progress Update
 The project now supports live web route loading for traits and ethics, and ethics has been added as the second canonical entity family in the vertical-slice pipeline.
+
+
+## Latest Progress Update
+Route-level load conversion has been added for codex pages, and authorities has been added as the third canonical entity family in the vertical-slice pipeline.

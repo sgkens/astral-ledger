@@ -3,13 +3,17 @@ import {
   fallbackTraitDetails,
   fallbackTraitsList,
   fallbackEthicDetails,
-  fallbackEthicsList
+  fallbackEthicsList,
+  fallbackAuthorityDetails,
+  fallbackAuthoritiesList
 } from "../../../packages/db/src/queries";
 import {
   getTraitDetailFromD1,
   getTraitsListFromD1,
   getEthicDetailFromD1,
-  getEthicsListFromD1
+  getEthicsListFromD1,
+  getAuthorityDetailFromD1,
+  getAuthoritiesListFromD1
 } from "../../../packages/db/src/d1";
 
 export interface Env {
@@ -69,6 +73,14 @@ export default {
       });
     }
 
+    if (path === "/api/codex/authorities") {
+      return json({
+        entityType: "authority",
+        items: await loadList(env.DB, () => getAuthoritiesListFromD1(env.DB), fallbackAuthoritiesList),
+        generatedAt: new Date().toISOString()
+      });
+    }
+
     const traitMatch = path.match(/^\/api\/codex\/traits\/([a-z0-9-]+)$/);
     if (traitMatch) {
       const detail = await loadDetail(env.DB, () => getTraitDetailFromD1(env.DB, traitMatch[1]), fallbackTraitDetails[traitMatch[1]] ?? null);
@@ -79,6 +91,13 @@ export default {
     const ethicMatch = path.match(/^\/api\/codex\/ethics\/([a-z0-9-]+)$/);
     if (ethicMatch) {
       const detail = await loadDetail(env.DB, () => getEthicDetailFromD1(env.DB, ethicMatch[1]), fallbackEthicDetails[ethicMatch[1]] ?? null);
+      if (!detail) return json({ error: "Not found" }, { status: 404 });
+      return json(detail);
+    }
+
+    const authorityMatch = path.match(/^\/api\/codex\/authorities\/([a-z0-9-]+)$/);
+    if (authorityMatch) {
+      const detail = await loadDetail(env.DB, () => getAuthorityDetailFromD1(env.DB, authorityMatch[1]), fallbackAuthorityDetails[authorityMatch[1]] ?? null);
       if (!detail) return json({ error: "Not found" }, { status: 404 });
       return json(detail);
     }

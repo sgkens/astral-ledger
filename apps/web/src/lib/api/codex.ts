@@ -27,3 +27,12 @@ export async function fetchEthics(): Promise<CodexListItem[]> {
 export async function fetchEthic(slug: string): Promise<CodexDetail> {
   return await fetchJson<CodexDetail>(`/codex/ethics/${slug}`);
 }
+
+export async function fetchAuthorities(): Promise<CodexListItem[]> {
+  const data = await fetchJson<{ items: CodexListItem[] }>("/codex/authorities");
+  return data.items;
+}
+
+export async function fetchAuthority(slug: string): Promise<CodexDetail> {
+  return await fetchJson<CodexDetail>(`/codex/authorities/${slug}`);
+}

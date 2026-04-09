@@ -103,3 +103,67 @@ export const fallbackEthicDetails: Record<string, CodexDetail> = {
     tags: ["diplomacy", "trade", "federation"]
   }
 };
+
+export const fallbackAuthoritiesList: CodexListItem[] = [
+  {
+    slug: "corporate",
+    name: "Corporate",
+    entityType: "authority",
+    summary: "A corporate authority centered on commercial governance, executive power, and branch office expansion.",
+    patchChangedIn: "4.3",
+    tags: ["megacorp", "trade", "branch-offices"]
+  },
+  {
+    slug: "oligarchic",
+    name: "Oligarchic",
+    entityType: "authority",
+    summary: "A society governed by a ruling elite, balancing flexible leadership with institutional continuity.",
+    patchChangedIn: "4.3",
+    tags: ["government", "flexible", "elite-rule"]
+  }
+];
+
+export const fallbackAuthorityDetails: Record<string, CodexDetail> = {
+  corporate: {
+    name: "Corporate",
+    slug: "corporate",
+    entityType: "authority",
+    summary: "A corporate authority centered on commercial governance, executive power, and branch office expansion.",
+    effects: ["Can establish Branch Offices", "Unlocks Megacorp government mechanics"],
+    requirements: [],
+    restrictions: [],
+    patchHistory: [
+      {
+        patchVersion: "4.3",
+        changeKind: "modified",
+        changeSummary: "Seeded baseline authority detail record."
+      }
+    ],
+    source: {
+      label: "Stellaris Wiki",
+      url: "https://stellaris.paradoxwikis.com/Government"
+    },
+    tags: ["megacorp", "trade", "branch-offices"]
+  },
+  oligarchic: {
+    name: "Oligarchic",
+    slug: "oligarchic",
+    entityType: "authority",
+    summary: "A society governed by a ruling elite, balancing flexible leadership with institutional continuity.",
+    effects: ["Supports regular agenda-based government progression", "Ruler is selected through periodic leadership rotation"],
+    requirements: [],
+    restrictions: [],
+    patchHistory: [
+      {
+        patchVersion: "4.3",
+        changeKind: "modified",
+        changeSummary: "Seeded baseline authority detail record."
+      }
+    ],
+    source: {
+      label: "Stellaris Wiki",
+      url: "https://stellaris.paradoxwikis.com/Government"
+    },
+    tags: ["government", "flexible", "elite-rule"]
+  }
+};
