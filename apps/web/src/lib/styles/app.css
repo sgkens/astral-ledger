@@ -125,3 +125,34 @@ button {
 button:hover {
   background: rgba(255,255,255,0.08);
 }
+
+
+input {
+  min-height: 36px;
+  width: 100%;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--theme-line);
+  background: rgba(255,255,255,0.03);
+  color: var(--theme-text);
+}
+
+.history-panel {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--theme-line);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.history-item {
+  display: grid;
+  gap: 6px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.history-item:first-child {
+  border-top: 0;
+}

@@ -259,3 +259,9 @@ Each slice should prove:
 - approve / reject / resolve actions added for review queue items and parse issues
 - `review_actions` table added for persisted moderation history
 - admin review UI is now interactive rather than read-only
+
+
+## Latest Progress
+- action notes added to admin review mutations
+- review history panel added to admin UI
+- per-item review history is now visible for queue items and parse issues

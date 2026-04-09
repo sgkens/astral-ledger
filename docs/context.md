@@ -407,3 +407,7 @@ Authority ingest parsing now uses the same pipeline as traits and ethics. A star
 
 ## Latest Progress Update
 The admin review surface now supports approve, reject, and resolve actions. These actions are persisted through a new `review_actions` table, and the Worker API now exposes mutation endpoints to update `review_queue` and annotate `parse_issues` during review.
+
+
+## Latest Progress Update
+Admin review actions now support operator notes, and the review UI now surfaces both per-item history and a global review history panel. This makes approve, reject, and resolve decisions traceable from the UI rather than only implicit in table status changes.

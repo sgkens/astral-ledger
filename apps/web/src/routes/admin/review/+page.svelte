@@ -28,14 +28,38 @@
       created_at: string;
       resolved_at: string | null;
     }>;
+    reviewActions: Array<{
+      id: number;
+      review_queue_id: number | null;
+      parse_issue_id: number | null;
+      action_kind: string;
+      note: string | null;
+      created_at: string;
+    }>;
   };
 
   let parseRuns = data.parseRuns;
   let parseIssues = data.parseIssues;
   let reviewQueue = data.reviewQueue;
+  let reviewActions = data.reviewActions;
   let actionState = "";
+  let notes: Record<string, string> = {};
+
+  function keyFor(targetType: "queue" | "issue", id: number) {
+    return `${targetType}:${id}`;
+  }
+
+  function historyForQueue(id: number) {
+    return reviewActions.filter((item) => item.review_queue_id === id);
+  }
+
+  function historyForIssue(id: number) {
+    return reviewActions.filter((item) => item.parse_issue_id === id);
+  }
 
   async function sendAction(targetType: "queue" | "issue", id: number, actionKind: "approve" | "reject" | "resolve") {
+    const noteKey = keyFor(targetType, id);
+    const note = (notes[noteKey] ?? "").trim();
     actionState = `Running ${actionKind} on ${targetType} ${id}...`;
 
     const response = await fetch("/api/admin/review/action", {
@@ -46,7 +70,8 @@
       body: JSON.stringify({
         targetType,
         id,
-        actionKind
+        actionKind,
+        note: note || undefined
       })
     });
 
@@ -74,12 +99,25 @@
         item.id === id
           ? {
               ...item,
-              message: `${item.message} [${actionKind}]`
+              message: `${item.message} [${actionKind}${note ? ` | ${note}` : ""}]`
             }
           : item
       );
     }
 
+    reviewActions = [
+      {
+        id: Date.now(),
+        review_queue_id: targetType === "queue" ? id : null,
+        parse_issue_id: targetType === "issue" ? id : null,
+        action_kind: actionKind,
+        note: note || null,
+        created_at: new Date().toISOString()
+      },
+      ...reviewActions
+    ];
+
+    notes[noteKey] = "";
     actionState = `${actionKind} completed for ${targetType} ${id}.`;
   }
 </script>
@@ -92,10 +130,10 @@
   <section class="panel">
     <div class="section-header">
       <h1>Admin Review</h1>
-      <span class="patch-badge">Actions enabled</span>
+      <span class="patch-badge">Traceable actions</span>
     </div>
     <p class="lede">
-      This screen surfaces parse runs, parse issues, and review queue records created by the ingest pipeline.
+      This screen surfaces parse runs, parse issues, review queue records, and review action history created by the ingest pipeline.
     </p>
     {#if actionState}
       <p class="lede">{actionState}</p>
@@ -138,11 +176,29 @@
             <p>{issue.message}</p>
             <p class="lede">{issue.entity_type ?? "unknown"} · {issue.page_url ?? "no page url"}</p>
           </div>
-          <div class="meta-grid">
-            {#if issue.code}<span class="tag">{issue.code}</span>{/if}
-            <span class="tag">{issue.created_at}</span>
-            <button on:click={() => sendAction("issue", issue.id, "resolve")}>Resolve</button>
-            <button on:click={() => sendAction("issue", issue.id, "reject")}>Reject</button>
+          <div class="stack">
+            <input
+              placeholder="Optional action note"
+              bind:value={notes[keyFor("issue", issue.id)]}
+            />
+            <div class="meta-grid">
+              {#if issue.code}<span class="tag">{issue.code}</span>{/if}
+              <span class="tag">{issue.created_at}</span>
+              <button on:click={() => sendAction("issue", issue.id, "resolve")}>Resolve</button>
+              <button on:click={() => sendAction("issue", issue.id, "reject")}>Reject</button>
+            </div>
+            {#if historyForIssue(issue.id).length}
+              <div class="history-panel">
+                <h4>History</h4>
+                {#each historyForIssue(issue.id) as action}
+                  <div class="history-item">
+                    <span class="tag">{action.action_kind}</span>
+                    <span>{action.created_at}</span>
+                    {#if action.note}<p>{action.note}</p>{/if}
+                  </div>
+                {/each}
+              </div>
+            {/if}
           </div>
         </article>
       {/each}
@@ -163,12 +219,56 @@
             <p>Status: {item.status}</p>
             <p class="lede">Issue ID: {item.issue_id ?? "none"} · Entity ID: {item.entity_id ?? "none"} · Snapshot ID: {item.snapshot_id ?? "none"}</p>
           </div>
+          <div class="stack">
+            <input
+              placeholder="Optional action note"
+              bind:value={notes[keyFor("queue", item.id)]}
+            />
+            <div class="meta-grid">
+              <span class="tag">{item.created_at}</span>
+              {#if item.resolved_at}<span class="tag">{item.resolved_at}</span>{/if}
+              <button on:click={() => sendAction("queue", item.id, "approve")}>Approve</button>
+              <button on:click={() => sendAction("queue", item.id, "reject")}>Reject</button>
+              <button on:click={() => sendAction("queue", item.id, "resolve")}>Resolve</button>
+            </div>
+            {#if historyForQueue(item.id).length}
+              <div class="history-panel">
+                <h4>History</h4>
+                {#each historyForQueue(item.id) as action}
+                  <div class="history-item">
+                    <span class="tag">{action.action_kind}</span>
+                    <span>{action.created_at}</span>
+                    {#if action.note}<p>{action.note}</p>{/if}
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </article>
+      {/each}
+    </div>
+  </section>
+
+  <section class="panel section">
+    <div class="section-header">
+      <h2>Global Review History</h2>
+      <span class="patch-badge">{reviewActions.length} items</span>
+    </div>
+
+    <div class="stack">
+      {#each reviewActions as action}
+        <article class="entity-card">
+          <div>
+            <h3>Action #{action.id} · {action.action_kind}</h3>
+            <p class="lede">
+              Queue: {action.review_queue_id ?? "none"} · Issue: {action.parse_issue_id ?? "none"}
+            </p>
+            {#if action.note}
+              <p>{action.note}</p>
+            {/if}
+          </div>
           <div class="meta-grid">
-            <span class="tag">{item.created_at}</span>
-            {#if item.resolved_at}<span class="tag">{item.resolved_at}</span>{/if}
-            <button on:click={() => sendAction("queue", item.id, "approve")}>Approve</button>
-            <button on:click={() => sendAction("queue", item.id, "reject")}>Reject</button>
-            <button on:click={() => sendAction("queue", item.id, "resolve")}>Resolve</button>
+            <span class="tag">{action.created_at}</span>
           </div>
         </article>
       {/each}

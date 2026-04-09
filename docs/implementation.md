@@ -13,19 +13,22 @@ This baseline now includes:
 - optional Wrangler execution for writing parsed records into D1
 - parse run creation during ingest
 - parse issue and review queue creation for low-confidence parses
-- starter admin review UI over parse runs, parse issues, and review queue
-- review action endpoints and UI controls for approve / reject / resolve
+- interactive admin review UI over parse runs, parse issues, review queue, and review action history
+- review action notes captured from the UI
 - seed fallback behavior for API reads
 
 ## Review workflow status
-The admin review UI is no longer read-only. It now supports:
+The admin review UI now supports:
 - approving review queue items
 - rejecting review queue items
 - resolving review queue items
 - resolving parse issues
 - rejecting parse issues
+- attaching notes to actions
+- viewing per-item action history
+- viewing global review history
 
-Review actions are recorded in the `review_actions` table.
+Review actions are persisted in the `review_actions` table and exposed through `/api/admin/review/actions`.
 
 ## Next step
-Add notes/reasons to actions from the UI and surface `review_actions` history in the admin review page.
+Add auth/permission enforcement for admin actions and build entity detail deep-links from review items into codex pages.

@@ -93,6 +93,21 @@ async function adminReviewQueue(db?: D1Database) {
   }
 }
 
+async function adminReviewActions(db?: D1Database) {
+  if (!db) return [];
+  try {
+    const result = await db.prepare(`
+      SELECT id, review_queue_id, parse_issue_id, action_kind, note, created_at
+      FROM review_actions
+      ORDER BY id DESC
+      LIMIT 200
+    `).all();
+    return result.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
 async function createReviewAction(
   db: D1Database | undefined,
   targetType: "queue" | "issue",
@@ -118,7 +133,7 @@ async function createReviewAction(
         VALUES (?, NULL, ?, ?)
       `).bind(id, actionKind, note ?? null).run();
 
-      return { ok: true, targetType, id, actionKind, status: newStatus };
+      return { ok: true, targetType, id, actionKind, status: newStatus, note: note ?? null };
     }
 
     if (targetType === "issue") {
@@ -134,7 +149,7 @@ async function createReviewAction(
         VALUES (NULL, ?, ?, ?)
       `).bind(id, actionKind, note ?? null).run();
 
-      return { ok: true, targetType, id, actionKind };
+      return { ok: true, targetType, id, actionKind, note: note ?? null };
     }
 
     return { ok: false, error: "Unsupported target type" };
@@ -198,6 +213,10 @@ export default {
 
     if (path === "/api/admin/review/review-queue") {
       return json({ items: await adminReviewQueue(env.DB) });
+    }
+
+    if (path === "/api/admin/review/actions") {
+      return json({ items: await adminReviewActions(env.DB) });
     }
 
     const traitMatch = path.match(/^\/api\/codex\/traits\/([a-z0-9-]+)$/);

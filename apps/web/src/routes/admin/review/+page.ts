@@ -29,6 +29,15 @@ type ReviewQueueItem = {
   resolved_at: string | null;
 };
 
+type ReviewAction = {
+  id: number;
+  review_queue_id: number | null;
+  parse_issue_id: number | null;
+  action_kind: string;
+  note: string | null;
+  created_at: string;
+};
+
 export async function load({ fetch }: { fetch: typeof globalThis.fetch }) {
   async function getJson<T>(path: string): Promise<T> {
     const response = await fetch(path);
@@ -36,15 +45,17 @@ export async function load({ fetch }: { fetch: typeof globalThis.fetch }) {
     return await response.json() as T;
   }
 
-  const [runs, issues, queue] = await Promise.all([
+  const [runs, issues, queue, actions] = await Promise.all([
     getJson<{ items: ParseRun[] }>("/api/admin/review/parse-runs"),
     getJson<{ items: ParseIssue[] }>("/api/admin/review/parse-issues"),
-    getJson<{ items: ReviewQueueItem[] }>("/api/admin/review/review-queue")
+    getJson<{ items: ReviewQueueItem[] }>("/api/admin/review/review-queue"),
+    getJson<{ items: ReviewAction[] }>("/api/admin/review/actions")
   ]);
 
   return {
     parseRuns: runs.items,
     parseIssues: issues.items,
-    reviewQueue: queue.items
+    reviewQueue: queue.items,
+    reviewActions: actions.items
   };
 }
