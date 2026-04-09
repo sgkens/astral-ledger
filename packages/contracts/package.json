@@ -1,0 +1,8 @@
+{
+  "name": "@astral-ledger/contracts",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
