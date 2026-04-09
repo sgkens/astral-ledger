@@ -391,3 +391,7 @@ Route-level load conversion has been added for codex pages, and authorities has 
 
 ## Latest Progress Update
 A heuristic-based real trait parser has been added in the PowerShell ingest layer, and source snapshot persistence now writes raw HTML plus JSON metadata to a local snapshot store. Parse/review tables have also been added to the D1 migration set for the future ingest workflow.
+
+
+## Latest Progress Update
+The trait ingest pipeline now supports D1 write integration through generated upsert SQL and optional Wrangler execution. Source snapshot metadata is also persisted into D1 via the `source_snapshots` table, giving the ingestion path full source-to-row traceability for traits.

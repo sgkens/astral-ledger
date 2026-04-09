@@ -235,3 +235,9 @@ Each slice should prove:
 - heuristic trait parser added for real wiki HTML parsing
 - source snapshot persistence added to the PowerShell ingest pipeline
 - parse/review migration added for future approval workflow integration
+
+
+## Latest Progress
+- D1 write integration added for parsed trait records
+- source snapshot rows now persist into D1 through generated upsert SQL
+- Wrangler execution path added for ingest-driven D1 writes

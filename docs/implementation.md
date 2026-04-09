@@ -9,22 +9,18 @@ This baseline now includes:
 - route-level `load` conversion for codex routes
 - a real trait parser path in PowerShell using wiki HTML heuristics
 - local source snapshot persistence for fetched source HTML
+- D1 SQL generation for parsed trait upserts
+- optional Wrangler execution for writing parsed trait records into D1
 - seed fallback behavior for API reads
 
-## Real trait parser status
-The trait parser is now heuristic-based rather than seeded. It:
-- discovers trait candidates from wiki HTML
-- locates trait sections by heading ID
-- extracts a summary from decoded section text
-- extracts effects from list items and fallback text heuristics
-- captures trait image candidates when present
-- returns parse confidence and warnings
-
-## Source snapshot persistence status
-The ingest pipeline now persists:
-- raw fetched HTML snapshot
-- JSON metadata alongside the snapshot
-- content hash, byte length, and capture time
+## DB write integration status
+The ingest pipeline now supports database writes for parsed trait data by:
+- generating deterministic SQL from normalized trait payloads
+- persisting source snapshot metadata into `source_snapshots`
+- upserting entities into `entities`
+- replacing effect rows in `entity_effects`
+- replacing requirement/restriction rows in `entity_requirements`
+- writing low-confidence parse warnings into `parse_issues`
 
 ## Next step
-Wire persisted source snapshot metadata into database writes and add real parser coverage for ethics.
+Add database write integration for ethics using the same normalized payload and SQL generation pattern, then connect parse runs and review queue creation.
