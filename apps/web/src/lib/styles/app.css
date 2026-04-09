@@ -38,3 +38,21 @@ button:disabled, input:disabled { opacity: 0.55; cursor: not-allowed; }
 .history-item { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.05); }
 .history-item:first-child { border-top: 0; }
 .permission-note { color: var(--theme-danger); font-size: 14px; line-height: 1.4; }
+.actor-row { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: start; }
+.actor-history { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start; }
+.avatar-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--theme-line);
+  background: linear-gradient(135deg, rgba(211,168,74,0.22), rgba(89,195,255,0.18));
+  color: var(--theme-text);
+  font-weight: 700;
+}
+.avatar-small {
+  width: 40px;
+  height: 40px;
+  font-size: 12px;
+}

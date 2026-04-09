@@ -19,6 +19,8 @@ type AccessIdentity = {
   reason?: string;
   email?: string;
   subject?: string;
+  displayName?: string;
+  avatarUrl?: string;
   roles: string[];
   groups: string[];
   source: "access_jwt" | "admin_api_key" | "none";
@@ -47,6 +49,14 @@ function stringArrayFromUnknown(value: unknown): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
   if (typeof value === "string" && value.trim()) return [value.trim()];
   return [];
+}
+
+function stringFromClaims(payload: JWTPayload, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = (payload as Record<string, unknown>)[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return undefined;
 }
 
 function extractRolesAndGroups(payload: JWTPayload): { roles: string[]; groups: string[] } {
@@ -90,10 +100,21 @@ async function validateAccessJwt(request: Request, env: Env): Promise<AccessIden
     const jwks = getJwks(teamDomain);
     const { payload } = await jwtVerify(jwt, jwks, { audience: aud });
     const { roles, groups } = extractRolesAndGroups(payload);
+
+    const email = typeof payload.email === "string" ? payload.email : undefined;
+    const subject = typeof payload.sub === "string" ? payload.sub : undefined;
+    const displayName =
+      stringFromClaims(payload, ["name", "given_name", "nickname", "preferred_username", "custom:name"]) ??
+      email ??
+      subject;
+    const avatarUrl = stringFromClaims(payload, ["picture", "avatar", "custom:avatar", "https://astral-ledger.dev/avatar"]);
+
     return {
       ok: true,
-      email: typeof payload.email === "string" ? payload.email : undefined,
-      subject: typeof payload.sub === "string" ? payload.sub : undefined,
+      email,
+      subject,
+      displayName,
+      avatarUrl,
       roles,
       groups,
       source: "access_jwt",
@@ -122,6 +143,8 @@ async function getAdminIdentity(request: Request, env: Env): Promise<AccessIdent
       ok: true,
       email: "local-admin-key",
       subject: "local-admin-key",
+      displayName: "Local Admin Key",
+      avatarUrl: undefined,
       roles: ["admin"],
       groups: ["admin"],
       source: "admin_api_key"
@@ -169,6 +192,8 @@ function adminIdentityPayload(identity: AccessIdentity, env: Env) {
     ok: identity.ok,
     email: identity.email ?? null,
     subject: identity.subject ?? null,
+    displayName: identity.displayName ?? null,
+    avatarUrl: identity.avatarUrl ?? null,
     source: identity.source,
     roles: identity.roles,
     groups: identity.groups,
@@ -216,45 +241,35 @@ async function createReviewAction(
   const actorEmail = actor.email ?? null;
   const actorSubject = actor.subject ?? null;
   const actorSource = actor.source;
+  const actorDisplayName = actor.displayName ?? actor.email ?? actor.subject ?? "Unknown reviewer";
 
   try {
-    if (targetType === "queue") {
-      const newStatus = actionKind === "approve" ? "approved" : actionKind === "reject" ? "rejected" : "resolved";
-      await db.prepare(`
-        UPDATE review_queue
-        SET status = ?, resolved_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).bind(newStatus, id).run();
+    await db.prepare(`
+      INSERT INTO review_actions (
+        review_queue_id, parse_issue_id, action_kind, note, actor_email, actor_subject, actor_source
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      targetType === "queue" ? id : null,
+      targetType === "issue" ? id : null,
+      actionKind,
+      note ?? null,
+      actorEmail,
+      actorSubject,
+      actorSource
+    ).run();
 
-      await db.prepare(`
-        INSERT INTO review_actions (
-          review_queue_id, parse_issue_id, action_kind, note, actor_email, actor_subject, actor_source
-        )
-        VALUES (?, NULL, ?, ?, ?, ?, ?)
-      `).bind(id, actionKind, note ?? null, actorEmail, actorSubject, actorSource).run();
-
-      return { ok: true, targetType, id, actionKind, status: newStatus, note: note ?? null, actor_email: actorEmail, actor_subject: actorSubject, actor_source: actorSource };
-    }
-
-    if (targetType === "issue") {
-      const suffix = note ? ` | ${note}` : "";
-      await db.prepare(`
-        UPDATE parse_issues
-        SET message = message || ?
-        WHERE id = ?
-      `).bind(` [${actionKind}${suffix}]`, id).run();
-
-      await db.prepare(`
-        INSERT INTO review_actions (
-          review_queue_id, parse_issue_id, action_kind, note, actor_email, actor_subject, actor_source
-        )
-        VALUES (NULL, ?, ?, ?, ?, ?, ?)
-      `).bind(id, actionKind, note ?? null, actorEmail, actorSubject, actorSource).run();
-
-      return { ok: true, targetType, id, actionKind, note: note ?? null, actor_email: actorEmail, actor_subject: actorSubject, actor_source: actorSource };
-    }
-
-    return { ok: false, error: "Unsupported target type" };
+    return {
+      ok: true,
+      targetType,
+      id,
+      actionKind,
+      note: note ?? null,
+      actor_email: actorEmail,
+      actor_subject: actorSubject,
+      actor_source: actorSource,
+      actor_display_name: actorDisplayName
+    };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Unknown database error" };
   }
@@ -295,7 +310,6 @@ export default {
       return json(result, { status: result.ok ? 200 : 400 });
     }
 
-    // Seeded admin views for this incremental package
     if (path === "/api/admin/review/parse-runs") return json({ items: [] });
     if (path === "/api/admin/review/parse-issues") {
       return json({ items: [{ id: 1, entity_type: "trait", page_url: "https://stellaris.paradoxwikis.com/Traits", severity: "warning", code: "low_confidence_parse", message: "Example parse issue", raw_context: "intelligent", created_at: new Date().toISOString(), codex_href: "/codex/traits/intelligent" }] });
