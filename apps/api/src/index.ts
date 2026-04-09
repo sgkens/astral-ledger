@@ -20,12 +20,44 @@ export interface Env {
   DB: D1Database;
   MEDIA: R2Bucket;
   APP_NAME: string;
+  ADMIN_REQUIRE_ACCESS_HEADER?: string;
+  ADMIN_API_KEY?: string;
 }
 
 function json(data: unknown, init: ResponseInit = {}) {
   const headers = new Headers(init.headers);
   headers.set("content-type", "application/json; charset=utf-8");
   return new Response(JSON.stringify(data, null, 2), { ...init, headers });
+}
+
+function unauthorized(message = "Unauthorized") {
+  return json({ ok: false, error: message }, { status: 401 });
+}
+
+function isAdminAuthorized(request: Request, env: Env): boolean {
+  const requireAccessHeader = (env.ADMIN_REQUIRE_ACCESS_HEADER ?? "true").toLowerCase() === "true";
+  const accessJwt = request.headers.get("cf-access-jwt-assertion");
+  const authHeader = request.headers.get("authorization");
+  const xAdminKey = request.headers.get("x-admin-key");
+  const expectedKey = env.ADMIN_API_KEY?.trim();
+
+  const hasAccessHeader = !!accessJwt;
+  const bearerOk =
+    !!expectedKey &&
+    !!authHeader &&
+    authHeader.startsWith("Bearer ") &&
+    authHeader.slice("Bearer ".length).trim() === expectedKey;
+  const headerKeyOk = !!expectedKey && !!xAdminKey && xAdminKey.trim() === expectedKey;
+
+  if (requireAccessHeader) {
+    return hasAccessHeader || bearerOk || headerKeyOk;
+  }
+
+  if (expectedKey) {
+    return bearerOk || headerKeyOk || hasAccessHeader;
+  }
+
+  return hasAccessHeader;
 }
 
 async function loadList<T extends CodexListItem>(db: D1Database | undefined, fromDb: () => Promise<T[]>, fallback: T[]): Promise<T[]> {
@@ -67,9 +99,22 @@ async function adminParseIssues(db?: D1Database) {
   if (!db) return [];
   try {
     const result = await db.prepare(`
-      SELECT id, entity_type, page_url, severity, code, message, raw_context, created_at
-      FROM parse_issues
-      ORDER BY id DESC
+      SELECT
+        i.id,
+        i.entity_type,
+        i.page_url,
+        i.severity,
+        i.code,
+        i.message,
+        i.raw_context,
+        i.created_at,
+        CASE
+          WHEN i.entity_type IS NOT NULL AND i.raw_context IS NOT NULL
+          THEN '/codex/' || i.entity_type || 's/' || i.raw_context
+          ELSE NULL
+        END AS codex_href
+      FROM parse_issues i
+      ORDER BY i.id DESC
       LIMIT 100
     `).all();
     return result.results ?? [];
@@ -82,9 +127,26 @@ async function adminReviewQueue(db?: D1Database) {
   if (!db) return [];
   try {
     const result = await db.prepare(`
-      SELECT id, entity_id, snapshot_id, issue_id, review_kind, status, created_at, resolved_at
-      FROM review_queue
-      ORDER BY id DESC
+      SELECT
+        q.id,
+        q.entity_id,
+        q.snapshot_id,
+        q.issue_id,
+        q.review_kind,
+        q.status,
+        q.created_at,
+        q.resolved_at,
+        e.slug AS entity_slug,
+        e.entity_type AS entity_type,
+        e.name AS entity_name,
+        CASE
+          WHEN e.id IS NOT NULL
+          THEN '/codex/' || e.entity_type || 's/' || e.slug
+          ELSE NULL
+        END AS codex_href
+      FROM review_queue q
+      LEFT JOIN entities e ON e.id = q.entity_id
+      ORDER BY q.id DESC
       LIMIT 100
     `).all();
     return result.results ?? [];
@@ -115,9 +177,7 @@ async function createReviewAction(
   actionKind: "approve" | "reject" | "resolve",
   note?: string
 ) {
-  if (!db) {
-    return { ok: false, error: "Database unavailable" };
-  }
+  if (!db) return { ok: false, error: "Database unavailable" };
 
   try {
     if (targetType === "queue") {
@@ -162,6 +222,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "");
+    const isAdminRoute = path.startsWith("/api/admin/");
+
+    if (isAdminRoute && !isAdminAuthorized(request, env)) {
+      return unauthorized("Admin access denied");
+    }
 
     if (path === "/api/health") {
       return json({ ok: true, service: env.APP_NAME || "Astral Ledger" });

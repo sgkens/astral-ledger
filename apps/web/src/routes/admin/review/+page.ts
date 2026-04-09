@@ -16,6 +16,7 @@ type ParseIssue = {
   message: string;
   raw_context: string | null;
   created_at: string;
+  codex_href: string | null;
 };
 
 type ReviewQueueItem = {
@@ -27,6 +28,10 @@ type ReviewQueueItem = {
   status: string;
   created_at: string;
   resolved_at: string | null;
+  entity_slug: string | null;
+  entity_type: string | null;
+  entity_name: string | null;
+  codex_href: string | null;
 };
 
 type ReviewAction = {

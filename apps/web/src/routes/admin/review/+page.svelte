@@ -17,6 +17,7 @@
       message: string;
       raw_context: string | null;
       created_at: string;
+      codex_href: string | null;
     }>;
     reviewQueue: Array<{
       id: number;
@@ -27,6 +28,10 @@
       status: string;
       created_at: string;
       resolved_at: string | null;
+      entity_slug: string | null;
+      entity_type: string | null;
+      entity_name: string | null;
+      codex_href: string | null;
     }>;
     reviewActions: Array<{
       id: number;
@@ -130,10 +135,10 @@
   <section class="panel">
     <div class="section-header">
       <h1>Admin Review</h1>
-      <span class="patch-badge">Traceable actions</span>
+      <span class="patch-badge">Protected admin surface</span>
     </div>
     <p class="lede">
-      This screen surfaces parse runs, parse issues, review queue records, and review action history created by the ingest pipeline.
+      Admin endpoints now require either a Cloudflare Access JWT header or a configured admin key header. Cloudflare recommends validating the `Cf-Access-Jwt-Assertion` header for Access-protected applications. citeturn939079search0turn939079search3
     </p>
     {#if actionState}
       <p class="lede">{actionState}</p>
@@ -175,6 +180,9 @@
             <h3>Issue #{issue.id} · {issue.severity}</h3>
             <p>{issue.message}</p>
             <p class="lede">{issue.entity_type ?? "unknown"} · {issue.page_url ?? "no page url"}</p>
+            {#if issue.codex_href}
+              <p><a href={issue.codex_href}>Open entity in codex</a></p>
+            {/if}
           </div>
           <div class="stack">
             <input
@@ -218,6 +226,9 @@
             <h3>Queue #{item.id} · {item.review_kind}</h3>
             <p>Status: {item.status}</p>
             <p class="lede">Issue ID: {item.issue_id ?? "none"} · Entity ID: {item.entity_id ?? "none"} · Snapshot ID: {item.snapshot_id ?? "none"}</p>
+            {#if item.codex_href}
+              <p><a href={item.codex_href}>Open {item.entity_name ?? "entity"} in codex</a></p>
+            {/if}
           </div>
           <div class="stack">
             <input

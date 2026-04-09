@@ -265,3 +265,9 @@ Each slice should prove:
 - action notes added to admin review mutations
 - review history panel added to admin UI
 - per-item review history is now visible for queue items and parse issues
+
+
+## Latest Progress
+- baseline admin auth gating added to admin API routes
+- codex deep-links added from review queue items and parse issues to entity pages
+- admin review surface now connects moderation work directly to codex inspection

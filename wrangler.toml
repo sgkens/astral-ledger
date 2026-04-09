@@ -4,6 +4,8 @@ compatibility_date = "2026-04-09"
 
 [vars]
 APP_NAME = "Astral Ledger"
+ADMIN_REQUIRE_ACCESS_HEADER = "true"
+ADMIN_API_KEY = "replace-me-dev-key"
 
 [[d1_databases]]
 binding = "DB"

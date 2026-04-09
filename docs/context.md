@@ -411,3 +411,7 @@ The admin review surface now supports approve, reject, and resolve actions. Thes
 
 ## Latest Progress Update
 Admin review actions now support operator notes, and the review UI now surfaces both per-item history and a global review history panel. This makes approve, reject, and resolve decisions traceable from the UI rather than only implicit in table status changes.
+
+
+## Latest Progress Update
+Admin auth and permission enforcement has been added as a baseline gate for `/api/admin/*` endpoints. Review items now also expose codex deep-links so operators can jump directly from parse issues or queue entries into the affected entity page during review.
