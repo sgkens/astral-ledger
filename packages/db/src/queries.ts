@@ -1,23 +1,19 @@
-import type { CodexListItem, CodexDetail } from "@astral-ledger/contracts";
+import type { CodexDetail, CodexListItem } from "@astral-ledger/contracts";
 
-export async function getTraitsList(): Promise<CodexListItem[]> {
-  return [
-    {
-      slug: "intelligent",
-      name: "Intelligent",
-      entityType: "trait",
-      summary: "This species excels at advanced reasoning and research.",
-      imageThumb: "/images/traits/intelligent/thumb.webp",
-      patchChangedIn: "4.3",
-      tags: ["science", "research", "biological"]
-    }
-  ];
-}
+export const fallbackTraitsList: CodexListItem[] = [
+  {
+    slug: "intelligent",
+    name: "Intelligent",
+    entityType: "trait",
+    summary: "This species excels at advanced reasoning and research.",
+    imageThumb: "/images/traits/intelligent/thumb.webp",
+    patchChangedIn: "4.3",
+    tags: ["science", "research", "biological"]
+  }
+];
 
-export async function getTraitDetail(slug: string): Promise<CodexDetail | null> {
-  if (slug !== "intelligent") return null;
-
-  return {
+export const fallbackTraitDetails: Record<string, CodexDetail> = {
+  intelligent: {
     name: "Intelligent",
     slug: "intelligent",
     entityType: "trait",
@@ -41,5 +37,5 @@ export async function getTraitDetail(slug: string): Promise<CodexDetail | null> 
       original: "/images/traits/intelligent/original.png"
     },
     tags: ["science", "research", "biological"]
-  };
-}
+  }
+};

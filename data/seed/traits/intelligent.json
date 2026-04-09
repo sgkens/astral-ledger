@@ -17,9 +17,5 @@
     "label": "Stellaris Wiki",
     "url": "https://stellaris.paradoxwikis.com/Traits"
   },
-  "image": {
-    "thumb": "/images/traits/intelligent/thumb.webp",
-    "original": "/images/traits/intelligent/original.png"
-  },
   "tags": ["science", "research", "biological"]
 }

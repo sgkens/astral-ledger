@@ -20,7 +20,6 @@
     {:else}
       <div class="tooltip-card__icon tooltip-card__icon--placeholder" aria-hidden="true"></div>
     {/if}
-
     <div>
       <p class="eyebrow">{entityType}</p>
       <h3>{name}</h3>
@@ -68,7 +67,6 @@
     {#if patchChangedIn}
       <span class="patch-badge">Patch {patchChangedIn}</span>
     {/if}
-
     {#if sourceUrl && sourceLabel}
       <a href={sourceUrl} target="_blank" rel="noreferrer">{sourceLabel}</a>
     {/if}

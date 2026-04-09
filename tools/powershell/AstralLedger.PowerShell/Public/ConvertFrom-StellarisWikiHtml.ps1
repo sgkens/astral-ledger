@@ -4,12 +4,8 @@ function ConvertFrom-StellarisWikiHtml {
         [Parameter(Mandatory)]
         [ValidateSet('Trait','Civic','Origin','Ethic','Authority')]
         [string]$EntityType,
-
-        [Parameter(Mandatory)]
-        [string]$Html,
-
-        [Parameter(Mandatory)]
-        [string]$SourceUrl
+        [Parameter(Mandatory)][string]$Html,
+        [Parameter(Mandatory)][string]$SourceUrl
     )
 
     $entityTypeLower = $EntityType.ToLowerInvariant()

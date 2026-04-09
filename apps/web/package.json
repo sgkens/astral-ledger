@@ -1,10 +1,14 @@
 {
   "name": "@astral-ledger/web",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "echo 'wire SvelteKit dev server here'",
     "build": "echo 'wire SvelteKit build here'",
     "check": "echo 'wire SvelteKit typecheck here'"
+  },
+  "devDependencies": {
+    "svelte": "^5.0.0",
+    "@sveltejs/kit": "^2.0.0"
   }
 }

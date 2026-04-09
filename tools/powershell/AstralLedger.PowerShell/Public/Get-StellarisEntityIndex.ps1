@@ -4,19 +4,10 @@ function Get-StellarisEntityIndex {
         [Parameter(Mandatory)]
         [ValidateSet('Trait','Civic','Origin','Ethic','Authority')]
         [string]$EntityType,
-
-        [string]$SourceHtmlPath,
-
         [string]$Html
     )
 
-    if (-not $Html -and $SourceHtmlPath) {
-        $Html = Get-Content -Path $SourceHtmlPath -Raw -Encoding UTF8
-    }
-
-    if (-not $Html) {
-        throw 'Either -Html or -SourceHtmlPath must be provided.'
-    }
+    if (-not $Html) { throw 'Html is required.' }
 
     $result = [pscustomobject]@{
         EntityType = $EntityType.ToLowerInvariant()

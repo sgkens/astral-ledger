@@ -24,7 +24,7 @@
   <section class="panel">
     <div class="section-header">
       <h1>Traits</h1>
-      <span class="patch-badge">Seeded slice</span>
+      <span class="patch-badge">D1-ready</span>
     </div>
 
     <div class="stack">

@@ -1,9 +1,6 @@
 function Get-SourceHash {
-    [CmdletBinding(DefaultParameterSetName='String')]
-    param(
-        [Parameter(Mandatory, ParameterSetName='String')]
-        [string]$InputString
-    )
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$InputString)
 
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($InputString)
     $sha = [System.Security.Cryptography.SHA256]::Create()
@@ -15,5 +12,5 @@ function Get-SourceHash {
     }
 
     $hex = [System.BitConverter]::ToString($hash).Replace('-', '').ToLowerInvariant()
-    return "sha256:$hex"
+    "sha256:$hex"
 }

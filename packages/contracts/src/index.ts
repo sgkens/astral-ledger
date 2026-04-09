@@ -46,34 +46,3 @@ export interface CodexDetail {
   image?: ImageRef;
   tags?: string[];
 }
-
-export interface BuildScoreSet {
-  earlyEconomy?: number;
-  midgameTempo?: number;
-  lateCeiling?: number;
-  researchRamp?: number;
-  tradeScaling?: number;
-  unityOutput?: number;
-  fleetSafety?: number;
-  diplomacyStrength?: number;
-  complexity?: number;
-}
-
-export interface BuildDetail {
-  name: string;
-  patchVersion: string;
-  summary?: string;
-  entities: {
-    authority?: string;
-    ethics?: string[];
-    civics?: string[];
-    origin?: string;
-    traits?: string[];
-  };
-  scores?: BuildScoreSet;
-  notes?: Array<{
-    kind: "synergy" | "warning" | "tip" | "anti-synergy";
-    title: string;
-    body: string;
-  }>;
-}

@@ -1,22 +1,12 @@
 function Get-StellarisWikiPage {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [string]$Url,
-
+        [Parameter(Mandatory)][string]$Url,
         [string]$OutFile,
-
-        [string]$CacheDirectory = '.cache',
-
-        [switch]$UseCache,
-
-        [switch]$Force,
-
         [int]$ThrottleMilliseconds = 250
     )
 
     Start-Sleep -Milliseconds $ThrottleMilliseconds
-
     $response = Invoke-WebRequest -Uri $Url
     $html = [string]$response.Content
     $hash = Get-SourceHash -InputString $html

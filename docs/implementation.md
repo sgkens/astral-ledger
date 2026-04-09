@@ -1,25 +1,12 @@
 # Implementation Notes
 
-## Current Baseline
-The current code is a production-ready baseline, not a finished product.
+## Current state
+This baseline now includes:
+- initial D1 schema
+- trait seed migration
+- D1 read helpers
+- Worker trait endpoints
+- seed fallback behavior
 
-### Ready
-- workspace layout
-- D1 migration file
-- Drizzle schema baseline
-- Worker routes
-- Svelte pages
-- tooltip component
-- shared contracts
-- PowerShell module scaffold
-- seed data
-
-### Still Stubbed
-- DB-backed API queries
-- real parser logic
-- image cache upload path
-- admin auth
-- review workflow
-
-## Next Implementation Step
-Replace seeded trait list/detail data in `apps/api/src/index.ts` with D1-backed read models.
+## Next step
+Wire Svelte pages to the live API and add ethics as the second entity family.

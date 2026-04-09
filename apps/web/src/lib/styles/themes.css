@@ -7,12 +7,6 @@
   --theme-muted: var(--text-2);
   --theme-primary: var(--accent-gold);
   --theme-secondary: var(--accent-cyan);
-  --theme-glow: rgba(89, 195, 255, 0.18);
-  --theme-danger: var(--accent-red);
   --theme-success: var(--accent-green);
-}
-
-[data-theme="trade-science"] {
-  --theme-primary: var(--accent-gold);
-  --theme-secondary: var(--accent-cyan);
+  --theme-danger: var(--accent-red);
 }
