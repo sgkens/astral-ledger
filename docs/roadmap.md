@@ -241,3 +241,9 @@ Each slice should prove:
 - D1 write integration added for parsed trait records
 - source snapshot rows now persist into D1 through generated upsert SQL
 - Wrangler execution path added for ingest-driven D1 writes
+
+
+## Latest Progress
+- ethics D1 write integration added through the same normalized SQL pipeline used for traits
+- ingest now creates `parse_runs` rows
+- low-confidence ingest items can now create both `parse_issues` and `review_queue` rows automatically

@@ -12,7 +12,7 @@ function ConvertFrom-StellarisWikiHtml {
 
     $entityTypeLower = $EntityType.ToLowerInvariant()
 
-    if ($EntityType -ne 'Trait') {
+    if ($EntityType -notin @('Trait', 'Ethic')) {
         $result = [pscustomobject]@{
             EntityType      = $entityTypeLower
             Slug            = 'intelligent'
@@ -27,12 +27,7 @@ function ConvertFrom-StellarisWikiHtml {
             )
             Requirements    = @()
             Exclusions      = @()
-            ImageCandidates = @(
-                [pscustomobject]@{
-                    Kind      = 'icon'
-                    SourceUrl = 'https://stellaris.paradoxwikis.com/images/6/65/Trait_intelligent.png'
-                }
-            )
+            ImageCandidates = @()
             Source          = [pscustomobject]@{
                 Url  = $SourceUrl
                 Hash = (Get-SourceHash -InputString $Html)
@@ -45,7 +40,7 @@ function ConvertFrom-StellarisWikiHtml {
             Parse           = [pscustomobject]@{
                 Status     = 'parsed'
                 Confidence = 0.85
-                Warnings   = @('Baseline parser returned seeded output for non-trait entity type.')
+                Warnings   = @('Baseline parser returned seeded output for non-trait/non-ethic entity type.')
             }
         }
 
@@ -56,6 +51,8 @@ function ConvertFrom-StellarisWikiHtml {
     if (-not $Slug -and $Name) {
         $Slug = Normalize-StellarisSlug -Name $Name
     }
+
+    $pageName = if ($EntityType -eq 'Trait') { 'Traits' } else { 'Ethics' }
 
     $candidateIds = @()
     if ($Slug) {
@@ -96,7 +93,7 @@ function ConvertFrom-StellarisWikiHtml {
     }
 
     if ($null -eq $sectionStart) {
-        throw "Trait parser could not locate a heading for slug '$Slug'."
+        throw "$EntityType parser could not locate a heading for slug '$Slug'."
     }
 
     $remaining = $Html.Substring($sectionStart)
@@ -120,7 +117,7 @@ function ConvertFrom-StellarisWikiHtml {
         break
     }
     if (-not $summary) {
-        $summary = "Trait entry parsed from Stellaris Wiki HTML for $Name."
+        $summary = "$EntityType entry parsed from Stellaris Wiki HTML for $Name."
     }
 
     $effectMatches = [regex]::Matches($sectionHtml, '(?is)<li[^>]*>(?<item>.*?)</li>')
@@ -134,8 +131,14 @@ function ConvertFrom-StellarisWikiHtml {
     }
 
     if ($effects.Count -eq 0) {
+        $keywords = if ($EntityType -eq 'Trait') {
+            '(%|Upkeep|Growth|Research|Output|Value|Amenities|Housing|Army|Habitability|Pop|Jobs)'
+        } else {
+            '(%|Envoy|Research|Trade|Influence|Diplomatic|Happiness|Unity|Edict|Pop|Opinion)'
+        }
+
         foreach ($line in $lines) {
-            if ($line -match '(%|Upkeep|Growth|Research|Output|Value|Amenities|Housing|Army|Habitability|Pop|Jobs)') {
+            if ($line -match $keywords) {
                 if ($effects -notcontains $line) {
                     $effects += $line
                 }
@@ -153,7 +156,13 @@ function ConvertFrom-StellarisWikiHtml {
         }
     }
 
-    $imgMatch = [regex]::Match($sectionHtml, '(?is)<img[^>]+src="(?<src>[^"]*Trait_[^"]+\.(?:png|webp|jpg|svg))"[^>]*>')
+    $imgPattern = if ($EntityType -eq 'Trait') {
+        '(?is)<img[^>]+src="(?<src>[^"]*Trait_[^"]+\.(?:png|webp|jpg|svg))"[^>]*>'
+    } else {
+        '(?is)<img[^>]+src="(?<src>[^"]*Ethic[^"]*\.(?:png|webp|jpg|svg))"[^>]*>'
+    }
+
+    $imgMatch = [regex]::Match($sectionHtml, $imgPattern)
     $imageUrl = $imgMatch.Groups['src'].Value
     if ($imageUrl -and $imageUrl.StartsWith('/')) {
         $imageUrl = "https://stellaris.paradoxwikis.com$imageUrl"
@@ -162,16 +171,16 @@ function ConvertFrom-StellarisWikiHtml {
     $warnings = @()
     $confidence = 0.92
     if ($effectObjects.Count -eq 0) {
-        $warnings += 'No list-based effects were detected in the trait section.'
+        $warnings += 'No list-based effects were detected in the parsed section.'
         $confidence = 0.70
     }
     if (-not $imageUrl) {
-        $warnings += 'No trait image was detected in the parsed section.'
+        $warnings += 'No entity image was detected in the parsed section.'
         $confidence = [Math]::Min($confidence, 0.82)
     }
 
     $result = [pscustomobject]@{
-        EntityType      = 'trait'
+        EntityType      = $entityTypeLower
         Slug            = $Slug
         Name            = $Name
         Summary         = $summary
@@ -202,6 +211,6 @@ function ConvertFrom-StellarisWikiHtml {
         }
     }
 
-    Write-AstralLog -Stage parse -Message "Parsed trait/$($result.Slug) confidence=$($result.Parse.Confidence)"
+    Write-AstralLog -Stage parse -Message "Parsed $entityTypeLower/$($result.Slug) confidence=$($result.Parse.Confidence)"
     return $result
 }

@@ -26,10 +26,16 @@ function New-StellarisD1UpsertSql {
     $storageKey = $snapshot.storageKey
     $contentType = 'text/html'
     $byteLength = if ($snapshot.byteLength) { [int]$snapshot.byteLength } else { 0 }
+    $runSummary = "Ingest $($NormalizedPayload.entityType) count=$(@($items).Count) hash=$contentHash"
 
     $sql = New-Object System.Collections.Generic.List[string]
     $sql.Add('BEGIN TRANSACTION;')
     $sql.Add('')
+    $sql.Add('-- Parse run')
+    $sql.Add("INSERT INTO parse_runs (run_kind, status, started_at, finished_at, summary)")
+    $sql.Add("VALUES ($(ConvertTo-SqlLiteral $NormalizedPayload.entityType), 'completed', $(ConvertTo-SqlLiteral $fetchedAt), $(ConvertTo-SqlLiteral ((Get-Date).ToUniversalTime().ToString('o'))), $(ConvertTo-SqlLiteral $runSummary));")
+    $sql.Add('')
+
     $sql.Add('-- Source row')
     $sql.Add("INSERT INTO sources (kind, name, url)")
     $sql.Add("VALUES ($(ConvertTo-SqlLiteral $sourceKind), $(ConvertTo-SqlLiteral $sourceName), $(ConvertTo-SqlLiteral $sourceUrl))")
@@ -57,7 +63,9 @@ function New-StellarisD1UpsertSql {
         $sourceHash = if ($item.Source.Hash) { $item.Source.Hash } else { $contentHash }
         $changedInPatch = if ($item.Patch.ChangedIn) { $item.Patch.ChangedIn } else { $null }
         $parseStatus = if ($item.Parse.Status) { $item.Parse.Status } else { 'parsed' }
-        $reviewStatus = if (($item.Parse.Confidence -as [double]) -ge 0.9) { 'approved' } else { 'draft' }
+        $confidence = ($item.Parse.Confidence -as [double])
+        if ($null -eq $confidence -or $confidence -eq 0) { $confidence = 0.5 }
+        $reviewStatus = if ($confidence -ge 0.9) { 'approved' } else { 'draft' }
 
         $sql.Add("-- Entity $entityType/$slug")
         $sql.Add("INSERT INTO entities (")
@@ -128,14 +136,35 @@ function New-StellarisD1UpsertSql {
         }
         $sql.Add('')
 
-        if (($item.Parse.Confidence -as [double]) -lt 0.85) {
+        if ($confidence -lt 0.85) {
             $warningText = (@($item.Parse.Warnings) -join ' | ')
             if (-not $warningText) {
                 $warningText = 'Low confidence parse'
             }
 
             $sql.Add("INSERT INTO parse_issues (parse_run_id, entity_type, page_url, severity, code, message, raw_context)")
-            $sql.Add("VALUES (NULL, $(ConvertTo-SqlLiteral $entityType), $(ConvertTo-SqlLiteral $item.Source.Url), 'warning', 'low_confidence_parse', $(ConvertTo-SqlLiteral $warningText), $(ConvertTo-SqlLiteral $slug));")
+            $sql.Add("SELECT")
+            $sql.Add("  (SELECT id FROM parse_runs ORDER BY id DESC LIMIT 1),")
+            $sql.Add("  $(ConvertTo-SqlLiteral $entityType),")
+            $sql.Add("  $(ConvertTo-SqlLiteral $item.Source.Url),")
+            $sql.Add("  'warning',")
+            $sql.Add("  'low_confidence_parse',")
+            $sql.Add("  $(ConvertTo-SqlLiteral $warningText),")
+            $sql.Add("  $(ConvertTo-SqlLiteral $slug);")
+            $sql.Add('')
+
+            $sql.Add("INSERT INTO review_queue (entity_id, snapshot_id, issue_id, review_kind, status)")
+            $sql.Add("SELECT")
+            $sql.Add("  e.id,")
+            $sql.Add("  snap.id,")
+            $sql.Add("  issue.id,")
+            $sql.Add("  'parse_diff',")
+            $sql.Add("  'open'")
+            $sql.Add("FROM entities e")
+            $sql.Add("JOIN sources src ON src.id = e.source_id")
+            $sql.Add("JOIN source_snapshots snap ON snap.source_id = src.id AND snap.content_hash = $(ConvertTo-SqlLiteral $contentHash)")
+            $sql.Add("JOIN parse_issues issue ON issue.id = (SELECT id FROM parse_issues ORDER BY id DESC LIMIT 1)")
+            $sql.Add("WHERE e.entity_type = $(ConvertTo-SqlLiteral $entityType) AND e.slug = $(ConvertTo-SqlLiteral $slug);")
             $sql.Add('')
         }
     }

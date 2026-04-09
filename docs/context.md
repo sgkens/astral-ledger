@@ -395,3 +395,7 @@ A heuristic-based real trait parser has been added in the PowerShell ingest laye
 
 ## Latest Progress Update
 The trait ingest pipeline now supports D1 write integration through generated upsert SQL and optional Wrangler execution. Source snapshot metadata is also persisted into D1 via the `source_snapshots` table, giving the ingestion path full source-to-row traceability for traits.
+
+
+## Latest Progress Update
+Ethics now has the same D1 write integration path as traits. Ingest executions now create `parse_runs`, and low-confidence parsed items can automatically create both `parse_issues` and `review_queue` rows during ingest.
