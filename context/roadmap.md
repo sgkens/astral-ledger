@@ -247,3 +247,9 @@ Each slice should prove:
 - ethics D1 write integration added through the same normalized SQL pipeline used for traits
 - ingest now creates `parse_runs` rows
 - low-confidence ingest items can now create both `parse_issues` and `review_queue` rows automatically
+
+
+## Latest Progress
+- authority ingest parsing added to the shared PowerShell ingest pipeline
+- starter admin review UI added on top of parse runs, parse issues, and review queue
+- admin review read endpoints added to the Worker API

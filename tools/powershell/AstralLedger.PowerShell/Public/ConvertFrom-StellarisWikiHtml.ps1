@@ -12,7 +12,7 @@ function ConvertFrom-StellarisWikiHtml {
 
     $entityTypeLower = $EntityType.ToLowerInvariant()
 
-    if ($EntityType -notin @('Trait', 'Ethic')) {
+    if ($EntityType -notin @('Trait', 'Ethic', 'Authority')) {
         $result = [pscustomobject]@{
             EntityType      = $entityTypeLower
             Slug            = 'intelligent'
@@ -40,7 +40,7 @@ function ConvertFrom-StellarisWikiHtml {
             Parse           = [pscustomobject]@{
                 Status     = 'parsed'
                 Confidence = 0.85
-                Warnings   = @('Baseline parser returned seeded output for non-trait/non-ethic entity type.')
+                Warnings   = @('Baseline parser returned seeded output for unsupported entity type.')
             }
         }
 
@@ -52,7 +52,11 @@ function ConvertFrom-StellarisWikiHtml {
         $Slug = Normalize-StellarisSlug -Name $Name
     }
 
-    $pageName = if ($EntityType -eq 'Trait') { 'Traits' } else { 'Ethics' }
+    $pageName = switch ($EntityType) {
+        'Trait' { 'Traits' }
+        'Ethic' { 'Ethics' }
+        'Authority' { 'Government' }
+    }
 
     $candidateIds = @()
     if ($Slug) {
@@ -125,16 +129,16 @@ function ConvertFrom-StellarisWikiHtml {
     foreach ($match in $effectMatches) {
         $text = Get-HtmlDecodedText -HtmlFragment $match.Groups['item'].Value
         if (-not $text) { continue }
-        if ($text.Length -gt 220) { continue }
+        if ($text.Length -gt 240) { continue }
         if ($effects -contains $text) { continue }
         $effects += $text
     }
 
     if ($effects.Count -eq 0) {
-        $keywords = if ($EntityType -eq 'Trait') {
-            '(%|Upkeep|Growth|Research|Output|Value|Amenities|Housing|Army|Habitability|Pop|Jobs)'
-        } else {
-            '(%|Envoy|Research|Trade|Influence|Diplomatic|Happiness|Unity|Edict|Pop|Opinion)'
+        $keywords = switch ($EntityType) {
+            'Trait' { '(%|Upkeep|Growth|Research|Output|Value|Amenities|Housing|Army|Habitability|Pop|Jobs)' }
+            'Ethic' { '(%|Envoy|Research|Trade|Influence|Diplomatic|Happiness|Unity|Edict|Pop|Opinion)' }
+            'Authority' { '(Branch Offices|government|agenda|ruler|election|corporate|authority|civic|dictatorial|imperial|democratic|oligarchic)' }
         }
 
         foreach ($line in $lines) {
@@ -156,10 +160,10 @@ function ConvertFrom-StellarisWikiHtml {
         }
     }
 
-    $imgPattern = if ($EntityType -eq 'Trait') {
-        '(?is)<img[^>]+src="(?<src>[^"]*Trait_[^"]+\.(?:png|webp|jpg|svg))"[^>]*>'
-    } else {
-        '(?is)<img[^>]+src="(?<src>[^"]*Ethic[^"]*\.(?:png|webp|jpg|svg))"[^>]*>'
+    $imgPattern = switch ($EntityType) {
+        'Trait' { '(?is)<img[^>]+src="(?<src>[^"]*Trait_[^"]+\.(?:png|webp|jpg|svg))"[^>]*>' }
+        'Ethic' { '(?is)<img[^>]+src="(?<src>[^"]*Ethic[^"]*\.(?:png|webp|jpg|svg))"[^>]*>' }
+        'Authority' { '(?is)<img[^>]+src="(?<src>[^"]*(Corporate|Oligarchic|Imperial|Democratic|Dictatorial)[^"]*\.(?:png|webp|jpg|svg))"[^>]*>' }
     }
 
     $imgMatch = [regex]::Match($sectionHtml, $imgPattern)

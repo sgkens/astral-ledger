@@ -399,3 +399,7 @@ The trait ingest pipeline now supports D1 write integration through generated up
 
 ## Latest Progress Update
 Ethics now has the same D1 write integration path as traits. Ingest executions now create `parse_runs`, and low-confidence parsed items can automatically create both `parse_issues` and `review_queue` rows during ingest.
+
+
+## Latest Progress Update
+Authority ingest parsing now uses the same pipeline as traits and ethics. A starter admin review UI has also been added on top of `parse_runs`, `parse_issues`, and `review_queue`, giving the project its first operational inspection surface for ingest activity.

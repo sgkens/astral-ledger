@@ -16,24 +16,9 @@ The ingest pipeline now supports:
 
 ## Command examples
 
-### Traits: parse and generate normalized JSON only
-```bash
-pwsh -File ./tools/powershell/scripts/Invoke-TraitsIngest.ps1 -Limit 25
-```
-
-### Traits: parse and generate D1 SQL
-```bash
-pwsh -File ./tools/powershell/scripts/Invoke-TraitsIngest.ps1 -Limit 25 -GenerateSql
-```
-
 ### Traits: parse and write directly into D1
 ```bash
 pwsh -File ./tools/powershell/scripts/Invoke-TraitsIngest.ps1 -Limit 25 -ExecuteWithWrangler -DatabaseName astral-ledger
-```
-
-### Ethics: parse and generate D1 SQL
-```bash
-pwsh -File ./tools/powershell/scripts/Invoke-EthicsIngest.ps1 -Limit 16 -GenerateSql
 ```
 
 ### Ethics: parse and write directly into D1
@@ -41,25 +26,19 @@ pwsh -File ./tools/powershell/scripts/Invoke-EthicsIngest.ps1 -Limit 16 -Generat
 pwsh -File ./tools/powershell/scripts/Invoke-EthicsIngest.ps1 -Limit 16 -ExecuteWithWrangler -DatabaseName astral-ledger
 ```
 
-## Generated artifacts
-- `.cache/traits.html`
-- `.cache/ethics.html`
-- `.cache/snapshots/<date>/<hash>.html`
-- `.cache/snapshots/<date>/<hash>.json`
-- `.cache/traits.normalized.json`
-- `.cache/ethics.normalized.json`
-- `.cache/traits.upsert.sql`
-- `.cache/ethics.upsert.sql`
+### Authorities: parse and write directly into D1
+```bash
+pwsh -File ./tools/powershell/scripts/Invoke-AuthoritiesIngest.ps1 -Limit 12 -ExecuteWithWrangler -DatabaseName astral-ledger
+```
 
-## What gets written to D1
-- `parse_runs`
-- `sources`
-- `source_snapshots`
-- `entities`
-- `entity_effects`
-- `entity_requirements`
-- `parse_issues` when parse confidence is low
-- `review_queue` when low-confidence parses need review
+## Admin review UI
+A starter admin UI now reads from:
+- `/api/admin/review/parse-runs`
+- `/api/admin/review/parse-issues`
+- `/api/admin/review/review-queue`
+
+Route:
+- `/admin/review`
 
 ## Current limitation
-This is SQL-generation-based integration through Wrangler, not a native direct database driver inside PowerShell. It is reliable for the current Cloudflare D1 workflow and keeps the ingest process explicit and auditable.
+The admin review UI is read-only. It is intended as the first inspection surface over ingest activity, not a complete moderation workflow yet.

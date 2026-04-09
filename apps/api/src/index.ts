@@ -48,6 +48,51 @@ async function loadDetail<T extends CodexDetail>(db: D1Database | undefined, fro
   }
 }
 
+async function adminParseRuns(db?: D1Database) {
+  if (!db) return [];
+  try {
+    const result = await db.prepare(`
+      SELECT id, run_kind, status, started_at, finished_at, summary
+      FROM parse_runs
+      ORDER BY id DESC
+      LIMIT 50
+    `).all();
+    return result.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
+async function adminParseIssues(db?: D1Database) {
+  if (!db) return [];
+  try {
+    const result = await db.prepare(`
+      SELECT id, entity_type, page_url, severity, code, message, raw_context, created_at
+      FROM parse_issues
+      ORDER BY id DESC
+      LIMIT 100
+    `).all();
+    return result.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
+async function adminReviewQueue(db?: D1Database) {
+  if (!db) return [];
+  try {
+    const result = await db.prepare(`
+      SELECT id, entity_id, snapshot_id, issue_id, review_kind, status, created_at, resolved_at
+      FROM review_queue
+      ORDER BY id DESC
+      LIMIT 100
+    `).all();
+    return result.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -79,6 +124,18 @@ export default {
         items: await loadList(env.DB, () => getAuthoritiesListFromD1(env.DB), fallbackAuthoritiesList),
         generatedAt: new Date().toISOString()
       });
+    }
+
+    if (path === "/api/admin/review/parse-runs") {
+      return json({ items: await adminParseRuns(env.DB) });
+    }
+
+    if (path === "/api/admin/review/parse-issues") {
+      return json({ items: await adminParseIssues(env.DB) });
+    }
+
+    if (path === "/api/admin/review/review-queue") {
+      return json({ items: await adminReviewQueue(env.DB) });
     }
 
     const traitMatch = path.match(/^\/api\/codex\/traits\/([a-z0-9-]+)$/);

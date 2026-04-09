@@ -29,6 +29,14 @@ function Get-StellarisEntityIndex {
         )
         $skip = '^(Ethics?|Gestalt Consciousness|Regular ethics|Fanatic ethics|Contents|Description)$'
     }
+    elseif ($EntityType -eq 'Authority') {
+        $patterns = @(
+            '(?is)<a[^>]+href="(?<href>/Government(?:#[^"]+)?)"[^>]+title="(?<title>[^"]+)"[^>]*>.*?</a>',
+            '(?is)<a[^>]+href="(?<href>/Government(?:#[^"]+)?)"[^>]*>(?<label>[^<]{2,80})</a>',
+            '(?is)<span[^>]+class="mw-headline"[^>]+id="(?<id>[^"]+)"[^>]*>(?<label>[^<]{2,80})</span>'
+        )
+        $skip = '^(Government|Authorities?|Authority|Regular authorities|Corporate authorities|Gestalt authorities|Contents|Description|Government type)$'
+    }
     else {
         $result = [pscustomobject]@{
             EntityType = $entityTypeLower
@@ -60,11 +68,22 @@ function Get-StellarisEntityIndex {
             if (-not $href) {
                 $id = $match.Groups['id'].Value
                 if ($id) {
-                    $href = "/$($EntityType)s#$id"
+                    $pageSegment = switch ($EntityType) {
+                        'Trait' { 'Traits' }
+                        'Ethic' { 'Ethics' }
+                        'Authority' { 'Government' }
+                    }
+                    $href = "/$pageSegment#$id"
                 }
             }
 
-            $pageUrl = if ($href) { "$baseUrl$href" } else { "$baseUrl/$($EntityType)s#$slug" }
+            $pageSegmentDefault = switch ($EntityType) {
+                'Trait' { 'Traits' }
+                'Ethic' { 'Ethics' }
+                'Authority' { 'Government' }
+            }
+
+            $pageUrl = if ($href) { "$baseUrl$href" } else { "$baseUrl/$pageSegmentDefault#$slug" }
             $imageUrl = $match.Groups['img'].Value
             if ($imageUrl -and $imageUrl.StartsWith('/')) {
                 $imageUrl = "$baseUrl$imageUrl"
@@ -109,6 +128,27 @@ function Get-StellarisEntityIndex {
                     Name       = 'Xenophile'
                     Slug       = 'xenophile'
                     PageUrl    = 'https://stellaris.paradoxwikis.com/Ethics#Xenophile'
+                    ImageUrl   = $null
+                    PatchHint  = '4.3'
+                }
+            )
+        }
+        if ($EntityType -eq 'Authority') {
+            Write-AstralLog -Stage index -Message 'Authority index parser found no candidates, falling back to seeded candidates.'
+            return @(
+                [pscustomobject]@{
+                    EntityType = 'authority'
+                    Name       = 'Corporate'
+                    Slug       = 'corporate'
+                    PageUrl    = 'https://stellaris.paradoxwikis.com/Government#Corporate'
+                    ImageUrl   = $null
+                    PatchHint  = '4.3'
+                },
+                [pscustomobject]@{
+                    EntityType = 'authority'
+                    Name       = 'Oligarchic'
+                    Slug       = 'oligarchic'
+                    PageUrl    = 'https://stellaris.paradoxwikis.com/Government#Oligarchic'
                     ImageUrl   = $null
                     PatchHint  = '4.3'
                 }

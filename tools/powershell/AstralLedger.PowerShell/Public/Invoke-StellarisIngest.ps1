@@ -2,7 +2,7 @@ function Invoke-StellarisIngest {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('Trait','Ethic')]
+        [ValidateSet('Trait','Ethic','Authority')]
         [string]$EntityType,
 
         [int]$Limit = 25,
@@ -15,14 +15,19 @@ function Invoke-StellarisIngest {
     )
 
     $pageMap = @{
-        Trait = 'https://stellaris.paradoxwikis.com/Traits'
-        Ethic = 'https://stellaris.paradoxwikis.com/Ethics'
+        Trait     = 'https://stellaris.paradoxwikis.com/Traits'
+        Ethic     = 'https://stellaris.paradoxwikis.com/Ethics'
+        Authority = 'https://stellaris.paradoxwikis.com/Government'
     }
 
     $entityTypeLower = $EntityType.ToLowerInvariant()
-    $pageUrl = $pageMap[$EntityType]
-    $cacheName = "$($entityTypeLower)s"
+    $cacheName = switch ($EntityType) {
+        'Trait' { 'traits' }
+        'Ethic' { 'ethics' }
+        'Authority' { 'authorities' }
+    }
 
+    $pageUrl = $pageMap[$EntityType]
     $page = Get-StellarisWikiPage -Url $pageUrl -OutFile ".cache/$cacheName.html"
     $snapshot = Save-StellarisSourceSnapshot -Url $page.Url -Html $page.Html -ContentHash $page.ContentHash
 
